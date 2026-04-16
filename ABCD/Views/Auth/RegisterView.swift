@@ -6,8 +6,14 @@
 import SwiftUI
 
 struct RegisterView: View {
-    @ObservedObject var viewModel: AuthViewModel
+    @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) private var dismiss
+
+    @State private var displayName = ""
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var isLoading = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -30,28 +36,28 @@ struct RegisterView: View {
 
             // Input fields
             VStack(spacing: 16) {
-                TextField("Display Name", text: $viewModel.displayName)
+                TextField("Display Name", text: $displayName)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.name)
 
-                TextField("Email", text: $viewModel.email)
+                TextField("Email", text: $email)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.emailAddress)
-                    .autocapitalization(.none)
+                    .autocorrectionDisabled(true)
                     .keyboardType(.emailAddress)
 
-                SecureField("Password", text: $viewModel.password)
+                SecureField("Password", text: $password)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.newPassword)
 
-                SecureField("Confirm Password", text: $viewModel.confirmPassword)
+                SecureField("Confirm Password", text: $confirmPassword)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.newPassword)
             }
             .padding(.horizontal)
 
             // Error message
-            if let error = viewModel.authService.errorMessage {
+            if let error = authService.errorMessage {
                 Text(error)
                     .font(.caption)
                     .foregroundColor(.red)
@@ -61,7 +67,7 @@ struct RegisterView: View {
 
             // Register button
             Button {
-                viewModel.register()
+                register()
             } label: {
                 Text("Sign Up")
                     .fontWeight(.semibold)
@@ -72,7 +78,7 @@ struct RegisterView: View {
                     .cornerRadius(12)
             }
             .padding(.horizontal)
-            .disabled(viewModel.isLoading)
+            .disabled(isLoading)
 
             // Back to Login
             Button {
@@ -95,6 +101,29 @@ struct RegisterView: View {
                         .foregroundColor(.green)
                 }
             }
+        }
+    }
+
+    private func register() {
+        guard !displayName.trimmingCharacters(in: .whitespaces).isEmpty else {
+            authService.errorMessage = "Please enter your name."
+            return
+        }
+        guard !email.trimmingCharacters(in: .whitespaces).isEmpty else {
+            authService.errorMessage = "Please enter your email."
+            return
+        }
+        guard password.count >= 6 else {
+            authService.errorMessage = "Password must be at least 6 characters."
+            return
+        }
+        guard password == confirmPassword else {
+            authService.errorMessage = "Passwords do not match."
+            return
+        }
+        isLoading = true
+        authService.register(email: email, password: password, displayName: displayName) { _ in
+            isLoading = false
         }
     }
 }

@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Combine
 import FirebaseAuth
 import FirebaseFirestore
 
@@ -105,19 +106,29 @@ class AuthService: ObservableObject {
     // MARK: - Firestore Helpers
 
     func createUserDocument(user: UserModel) {
-        do {
-            try db.collection(Constants.Collections.users)
-                .document(user.id)
-                .setData(from: user)
-            DispatchQueue.main.async {
-                self.userModel = user
-                self.errorMessage = nil
+        let data: [String: Any] = [
+            "id": user.id,
+            "email": user.email,
+            "displayName": user.displayName,
+            "xp": user.xp,
+            "level": user.level,
+            "tasksCompleted": user.tasksCompleted,
+            "totalFocusMinutes": user.totalFocusMinutes,
+            "createdAt": Timestamp(date: user.createdAt)
+        ]
+
+        db.collection(Constants.Collections.users)
+            .document(user.id)
+            .setData(data) { [weak self] error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        self?.errorMessage = "Failed to create user profile: \(error.localizedDescription)"
+                        return
+                    }
+                    self?.userModel = user
+                    self?.errorMessage = nil
+                }
             }
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to create user profile: \(error.localizedDescription)"
-            }
-        }
     }
 
     func fetchUserDocument(userId: String) {
@@ -130,17 +141,24 @@ class AuthService: ObservableObject {
                         return
                     }
 
-                    guard let snapshot = snapshot, snapshot.exists else {
+                    guard let snapshot = snapshot, snapshot.exists,
+                          let data = snapshot.data() else {
                         self?.errorMessage = "User profile not found."
                         return
                     }
 
-                    do {
-                        let user = try snapshot.data(as: UserModel.self)
-                        self?.userModel = user
-                    } catch {
-                        self?.errorMessage = "Failed to parse user profile: \(error.localizedDescription)"
-                    }
+                    let createdTimestamp = data["createdAt"] as? Timestamp
+                    let user = UserModel(
+                        id: data["id"] as? String ?? userId,
+                        email: data["email"] as? String ?? "",
+                        displayName: data["displayName"] as? String ?? "",
+                        xp: data["xp"] as? Int ?? 0,
+                        level: data["level"] as? Int ?? 0,
+                        tasksCompleted: data["tasksCompleted"] as? Int ?? 0,
+                        totalFocusMinutes: data["totalFocusMinutes"] as? Int ?? 0,
+                        createdAt: createdTimestamp?.dateValue() ?? Date()
+                    )
+                    self?.userModel = user
                 }
             }
     }

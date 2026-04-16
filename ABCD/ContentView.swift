@@ -8,21 +8,14 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var authService = AuthService()
-    @StateObject private var authViewModel: AuthViewModel
-
-    init() {
-        let service = AuthService()
-        _authService = StateObject(wrappedValue: service)
-        _authViewModel = StateObject(wrappedValue: AuthViewModel(authService: service))
-    }
+    @EnvironmentObject var authService: AuthService
 
     var body: some View {
         Group {
             if authService.currentUser != nil {
-                MainTabView(authService: authService)
+                MainTabView()
             } else {
-                LoginView(viewModel: authViewModel)
+                LoginView()
             }
         }
     }
