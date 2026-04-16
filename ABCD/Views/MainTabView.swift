@@ -17,14 +17,10 @@ struct MainTabView: View {
                 }
 
             // Habits Tab
-            NavigationStack {
-                Text("Habits")
-                    .font(.title)
-                    .navigationTitle("Habits")
-            }
-            .tabItem {
-                Label("Habits", systemImage: "flame.fill")
-            }
+            HabitListView()
+                .tabItem {
+                    Label("Habits", systemImage: "flame.fill")
+                }
 
             // Focus Tab
             NavigationStack {

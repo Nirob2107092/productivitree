@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Xcode user data (machine-specific, not shared)
+xcuserdata/
+*.xcbkptlist
+*.xccheckout
+
+# Derived data
+DerivedData/
+build/
+
+# SPM build artifacts
+.build/
+.swiftpm/
+
+# Firebase config — contains API keys, share via secure channel instead
+# GoogleService-Info.plist
