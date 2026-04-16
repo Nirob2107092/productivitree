@@ -10,6 +10,8 @@ import FirebaseCore
 
 @main
 struct ABCDApp: App {
+    @StateObject private var authService = AuthService()
+
     init() {
         FirebaseApp.configure()
     }
@@ -17,6 +19,7 @@ struct ABCDApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(authService)
         }
     }
 }

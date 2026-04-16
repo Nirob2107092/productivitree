@@ -6,7 +6,11 @@
 import SwiftUI
 
 struct LoginView: View {
-    @ObservedObject var viewModel: AuthViewModel
+    @EnvironmentObject var authService: AuthService
+
+    @State private var email = ""
+    @State private var password = ""
+    @State private var isLoading = false
     @State private var showRegister = false
 
     var body: some View {
@@ -31,20 +35,20 @@ struct LoginView: View {
 
                 // Input fields
                 VStack(spacing: 16) {
-                    TextField("Email", text: $viewModel.email)
+                    TextField("Email", text: $email)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.emailAddress)
-                        .autocapitalization(.none)
+                        .autocorrectionDisabled(true)
                         .keyboardType(.emailAddress)
 
-                    SecureField("Password", text: $viewModel.password)
+                    SecureField("Password", text: $password)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
                 }
                 .padding(.horizontal)
 
                 // Error message
-                if let error = viewModel.authService.errorMessage {
+                if let error = authService.errorMessage {
                     Text(error)
                         .font(.caption)
                         .foregroundColor(.red)
@@ -54,7 +58,7 @@ struct LoginView: View {
 
                 // Login button
                 Button {
-                    viewModel.login()
+                    login()
                 } label: {
                     Text("Log In")
                         .fontWeight(.semibold)
@@ -65,7 +69,7 @@ struct LoginView: View {
                         .cornerRadius(12)
                 }
                 .padding(.horizontal)
-                .disabled(viewModel.isLoading)
+                .disabled(isLoading)
 
                 // Navigate to Register
                 Button {
@@ -79,8 +83,23 @@ struct LoginView: View {
                 Spacer()
             }
             .navigationDestination(isPresented: $showRegister) {
-                RegisterView(viewModel: viewModel)
+                RegisterView()
             }
+        }
+    }
+
+    private func login() {
+        guard !email.trimmingCharacters(in: .whitespaces).isEmpty else {
+            authService.errorMessage = "Please enter your email."
+            return
+        }
+        guard !password.isEmpty else {
+            authService.errorMessage = "Please enter your password."
+            return
+        }
+        isLoading = true
+        authService.login(email: email, password: password) { _ in
+            isLoading = false
         }
     }
 }

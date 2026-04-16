@@ -6,19 +6,15 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @ObservedObject var authService: AuthService
+    @EnvironmentObject var authService: AuthService
 
     var body: some View {
         TabView {
             // Tasks Tab
-            NavigationStack {
-                Text("Tasks")
-                    .font(.title)
-                    .navigationTitle("Tasks")
-            }
-            .tabItem {
-                Label("Tasks", systemImage: "checkmark.circle.fill")
-            }
+            TaskListView()
+                .tabItem {
+                    Label("Tasks", systemImage: "checkmark.circle.fill")
+                }
 
             // Habits Tab
             NavigationStack {
