@@ -6,7 +6,6 @@
 import Foundation
 import Combine
 import FirebaseFirestore
-import FirebaseFirestoreSwift
 
 class TaskService: ObservableObject {
     @Published var tasks: [TaskModel] = []
@@ -35,7 +34,7 @@ class TaskService: ObservableObject {
                     }
 
                     self?.tasks = snapshot?.documents.compactMap { doc in
-                        try? doc.data(as: TaskModel.self)
+                        self?.decodeTask(from: doc)
                     } ?? []
                 }
             }
@@ -44,29 +43,29 @@ class TaskService: ObservableObject {
     // MARK: - Create Task
 
     func createTask(task: TaskModel) {
-        do {
-            try db.collection(Constants.Collections.tasks)
-                .document(task.id)
-                .setData(from: task)
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to create task: \(error.localizedDescription)"
+        db.collection(Constants.Collections.tasks)
+            .document(task.id)
+            .setData(taskData(from: task)) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to create task: \(error.localizedDescription)"
+                    }
+                }
             }
-        }
     }
 
     // MARK: - Update Task
 
     func updateTask(task: TaskModel) {
-        do {
-            try db.collection(Constants.Collections.tasks)
-                .document(task.id)
-                .setData(from: task, merge: true)
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to update task: \(error.localizedDescription)"
+        db.collection(Constants.Collections.tasks)
+            .document(task.id)
+            .setData(taskData(from: task), merge: true) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to update task: \(error.localizedDescription)"
+                    }
+                }
             }
-        }
     }
 
     // MARK: - Delete Task
@@ -92,18 +91,67 @@ class TaskService: ObservableObject {
         updatedTask.isCompleted = true
         updatedTask.completedAt = Date()
 
-        do {
-            try db.collection(Constants.Collections.tasks)
-                .document(task.id)
-                .setData(from: updatedTask, merge: true)
+        db.collection(Constants.Collections.tasks)
+            .document(task.id)
+            .setData(taskData(from: updatedTask), merge: true) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to complete task: \(error.localizedDescription)"
+                    }
+                    return
+                }
 
-            // Award XP and increment stats
-            GamificationService.shared.addXP(userId: task.userId, amount: Constants.XP.taskCompleted)
-            GamificationService.shared.incrementTasksCompleted(userId: task.userId)
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to complete task: \(error.localizedDescription)"
+                // Award XP and increment stats only after successful write.
+                GamificationService.shared.addXP(userId: task.userId, amount: Constants.XP.taskCompleted)
+                GamificationService.shared.incrementTasksCompleted(userId: task.userId)
             }
+    }
+
+    private func taskData(from task: TaskModel) -> [String: Any] {
+        var data: [String: Any] = [
+            "id": task.id,
+            "userId": task.userId,
+            "title": task.title,
+            "description": task.description,
+            "priority": task.priority.rawValue,
+            "isCompleted": task.isCompleted,
+            "createdAt": Timestamp(date: task.createdAt)
+        ]
+
+        if let completedAt = task.completedAt {
+            data["completedAt"] = Timestamp(date: completedAt)
+        } else {
+            data["completedAt"] = NSNull()
         }
+
+        return data
+    }
+
+    private func decodeTask(from doc: QueryDocumentSnapshot) -> TaskModel? {
+        let data = doc.data()
+        guard
+            let userId = data["userId"] as? String,
+            let title = data["title"] as? String,
+            let description = data["description"] as? String,
+            let priorityRaw = data["priority"] as? String,
+            let priority = Priority(rawValue: priorityRaw),
+            let isCompleted = data["isCompleted"] as? Bool,
+            let createdAtTimestamp = data["createdAt"] as? Timestamp
+        else {
+            return nil
+        }
+
+        let completedAt = (data["completedAt"] as? Timestamp)?.dateValue()
+
+        return TaskModel(
+            id: doc.documentID,
+            userId: userId,
+            title: title,
+            description: description,
+            priority: priority,
+            isCompleted: isCompleted,
+            createdAt: createdAtTimestamp.dateValue(),
+            completedAt: completedAt
+        )
     }
 }

@@ -6,7 +6,6 @@
 import Foundation
 import Combine
 import FirebaseFirestore
-import FirebaseFirestoreSwift
 
 class HabitService: ObservableObject {
     @Published var habits: [HabitModel] = []
@@ -42,7 +41,7 @@ class HabitService: ObservableObject {
                         return
                     }
                     self?.habits = snapshot?.documents.compactMap { doc in
-                        try? doc.data(as: HabitModel.self)
+                        self?.decodeHabit(from: doc)
                     } ?? []
                 }
             }
@@ -51,15 +50,15 @@ class HabitService: ObservableObject {
     // MARK: - Create Habit
 
     func createHabit(habit: HabitModel) {
-        do {
-            try db.collection(Constants.Collections.habits)
-                .document(habit.id)
-                .setData(from: habit)
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to create habit: \(error.localizedDescription)"
+        db.collection(Constants.Collections.habits)
+            .document(habit.id)
+            .setData(habitData(from: habit)) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to create habit: \(error.localizedDescription)"
+                    }
+                }
             }
-        }
     }
 
     // MARK: - Toggle Today's Completion
@@ -85,15 +84,15 @@ class HabitService: ObservableObject {
         updatedHabit.currentStreak = newCurrentStreak
         updatedHabit.bestStreak = max(updatedHabit.bestStreak, newCurrentStreak)
 
-        do {
-            try db.collection(Constants.Collections.habits)
-                .document(habit.id)
-                .setData(from: updatedHabit, merge: true)
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to update habit: \(error.localizedDescription)"
+        db.collection(Constants.Collections.habits)
+            .document(habit.id)
+            .setData(habitData(from: updatedHabit), merge: true) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to update habit: \(error.localizedDescription)"
+                    }
+                }
             }
-        }
     }
 
     // MARK: - Delete Habit
@@ -133,5 +132,45 @@ class HabitService: ObservableObject {
         }
 
         return streak
+    }
+
+    private func habitData(from habit: HabitModel) -> [String: Any] {
+        [
+            "id": habit.id,
+            "userId": habit.userId,
+            "title": habit.title,
+            "completedDates": habit.completedDates,
+            "xpAwardedDates": habit.xpAwardedDates,
+            "currentStreak": habit.currentStreak,
+            "bestStreak": habit.bestStreak,
+            "createdAt": Timestamp(date: habit.createdAt)
+        ]
+    }
+
+    private func decodeHabit(from doc: QueryDocumentSnapshot) -> HabitModel? {
+        let data = doc.data()
+        guard
+            let userId = data["userId"] as? String,
+            let title = data["title"] as? String,
+            let completedDates = data["completedDates"] as? [String],
+            let currentStreak = data["currentStreak"] as? Int,
+            let bestStreak = data["bestStreak"] as? Int,
+            let createdAtTimestamp = data["createdAt"] as? Timestamp
+        else {
+            return nil
+        }
+
+        let xpAwardedDates = data["xpAwardedDates"] as? [String] ?? []
+
+        return HabitModel(
+            id: doc.documentID,
+            userId: userId,
+            title: title,
+            completedDates: completedDates,
+            xpAwardedDates: xpAwardedDates,
+            currentStreak: currentStreak,
+            bestStreak: bestStreak,
+            createdAt: createdAtTimestamp.dateValue()
+        )
     }
 }

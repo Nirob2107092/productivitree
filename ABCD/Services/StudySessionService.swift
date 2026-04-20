@@ -6,7 +6,6 @@
 import Foundation
 import Combine
 import FirebaseFirestore
-import FirebaseFirestoreSwift
 
 class StudySessionService: ObservableObject {
     @Published var sessions: [StudySession] = []
@@ -35,7 +34,7 @@ class StudySessionService: ObservableObject {
                     }
 
                     let loadedSessions = snapshot?.documents.compactMap { document in
-                        try? document.data(as: StudySession.self)
+                        self?.decodeSession(from: document)
                     } ?? []
 
                     self?.sessions = loadedSessions
@@ -83,15 +82,15 @@ class StudySessionService: ObservableObject {
     // MARK: - Create Session
 
     func createSession(session: StudySession) {
-        do {
-            try db.collection(Constants.Collections.studySessions)
-                .document(session.id)
-                .setData(from: session)
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to create session: \(error.localizedDescription)"
+        db.collection(Constants.Collections.studySessions)
+            .document(session.id)
+            .setData(sessionData(from: session)) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to create session: \(error.localizedDescription)"
+                    }
+                }
             }
-        }
     }
 
     // MARK: - Join Session
@@ -141,7 +140,7 @@ class StudySessionService: ObservableObject {
                     }
 
                     guard let snapshot = snapshot,
-                          let session = try? snapshot.data(as: StudySession.self) else {
+                          let session = self.decodeSession(from: snapshot) else {
                         self.errorMessage = "Session not found."
                         return
                     }
@@ -193,7 +192,7 @@ class StudySessionService: ObservableObject {
                     }
 
                     guard let snapshot = snapshot,
-                          let session = try? snapshot.data(as: StudySession.self) else {
+                          let session = self.decodeSession(from: snapshot) else {
                         self.errorMessage = "Session not found."
                         return
                     }
@@ -214,6 +213,54 @@ class StudySessionService: ObservableObject {
                     }
                 }
             }
+    }
+
+    private func sessionData(from session: StudySession) -> [String: Any] {
+        [
+            "id": session.id,
+            "title": session.title,
+            "scheduledAt": Timestamp(date: session.scheduledAt),
+            "category": session.category.rawValue,
+            "creatorId": session.creatorId,
+            "creatorName": session.creatorName,
+            "participants": session.participants,
+            "createdAt": Timestamp(date: session.createdAt)
+        ]
+    }
+
+    private func decodeSession(from doc: QueryDocumentSnapshot) -> StudySession? {
+        decodeSession(data: doc.data(), id: doc.documentID)
+    }
+
+    private func decodeSession(from snapshot: DocumentSnapshot) -> StudySession? {
+        guard let data = snapshot.data() else { return nil }
+        return decodeSession(data: data, id: snapshot.documentID)
+    }
+
+    private func decodeSession(data: [String: Any], id: String) -> StudySession? {
+        guard
+            let title = data["title"] as? String,
+            let scheduledAtTimestamp = data["scheduledAt"] as? Timestamp,
+            let categoryRaw = data["category"] as? String,
+            let category = SessionCategory(rawValue: categoryRaw),
+            let creatorId = data["creatorId"] as? String,
+            let creatorName = data["creatorName"] as? String,
+            let participants = data["participants"] as? [String],
+            let createdAtTimestamp = data["createdAt"] as? Timestamp
+        else {
+            return nil
+        }
+
+        return StudySession(
+            id: id,
+            title: title,
+            scheduledAt: scheduledAtTimestamp.dateValue(),
+            category: category,
+            creatorId: creatorId,
+            creatorName: creatorName,
+            participants: participants,
+            createdAt: createdAtTimestamp.dateValue()
+        )
     }
 }
 

@@ -6,7 +6,6 @@
 import Foundation
 import Combine
 import FirebaseFirestore
-import FirebaseFirestoreSwift
 
 class FocusService: ObservableObject {
     @Published var sessions: [FocusSessionModel] = []
@@ -34,7 +33,7 @@ class FocusService: ObservableObject {
                         return
                     }
                     self?.sessions = snapshot?.documents.compactMap { doc in
-                        try? doc.data(as: FocusSessionModel.self)
+                        self?.decodeSession(from: doc)
                     } ?? []
                 }
             }
@@ -43,15 +42,15 @@ class FocusService: ObservableObject {
     // MARK: - Save Session
 
     func saveSession(session: FocusSessionModel) {
-        do {
-            try db.collection(Constants.Collections.focusSessions)
-                .document(session.id)
-                .setData(from: session)
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to save session: \(error.localizedDescription)"
+        db.collection(Constants.Collections.focusSessions)
+            .document(session.id)
+            .setData(sessionData(from: session)) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to save session: \(error.localizedDescription)"
+                    }
+                }
             }
-        }
     }
 
     // MARK: - Update Total Focus Time
@@ -62,5 +61,36 @@ class FocusService: ObservableObject {
             .updateData([
                 "totalFocusMinutes": FieldValue.increment(Int64(minutes))
             ])
+    }
+
+    private func sessionData(from session: FocusSessionModel) -> [String: Any] {
+        [
+            "id": session.id,
+            "userId": session.userId,
+            "durationMinutes": session.durationMinutes,
+            "mode": session.mode.rawValue,
+            "completedAt": Timestamp(date: session.completedAt)
+        ]
+    }
+
+    private func decodeSession(from doc: QueryDocumentSnapshot) -> FocusSessionModel? {
+        let data = doc.data()
+        guard
+            let userId = data["userId"] as? String,
+            let durationMinutes = data["durationMinutes"] as? Int,
+            let modeRaw = data["mode"] as? String,
+            let mode = FocusMode(rawValue: modeRaw),
+            let completedAtTimestamp = data["completedAt"] as? Timestamp
+        else {
+            return nil
+        }
+
+        return FocusSessionModel(
+            id: doc.documentID,
+            userId: userId,
+            durationMinutes: durationMinutes,
+            mode: mode,
+            completedAt: completedAtTimestamp.dateValue()
+        )
     }
 }
