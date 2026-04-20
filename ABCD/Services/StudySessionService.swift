@@ -25,7 +25,6 @@ class StudySessionService: ObservableObject {
         listener?.remove()
 
         listener = db.collection(Constants.Collections.studySessions)
-            .order(by: "createdAt", descending: true)
             .addSnapshotListener { [weak self] snapshot, error in
                 DispatchQueue.main.async {
                     if let error = error {
@@ -33,14 +32,23 @@ class StudySessionService: ObservableObject {
                         return
                     }
 
-                    let loadedSessions = snapshot?.documents.compactMap { document in
+                    let loadedSessions = (snapshot?.documents.compactMap { document in
                         self?.decodeSession(from: document)
-                    } ?? []
+                    } ?? [])
+                    .sorted { $0.createdAt > $1.createdAt }
 
                     self?.sessions = loadedSessions
+                    self?.errorMessage = nil
                     self?.fetchParticipantDisplayNames(from: loadedSessions)
                 }
             }
+    }
+
+    func stopListening() {
+        listener?.remove()
+        listener = nil
+        sessions = []
+        participantDisplayNames = [:]
     }
 
     // MARK: - Resolve Participant Display Names
@@ -240,27 +248,40 @@ class StudySessionService: ObservableObject {
     private func decodeSession(data: [String: Any], id: String) -> StudySession? {
         guard
             let title = data["title"] as? String,
-            let scheduledAtTimestamp = data["scheduledAt"] as? Timestamp,
             let categoryRaw = data["category"] as? String,
-            let category = SessionCategory(rawValue: categoryRaw),
             let creatorId = data["creatorId"] as? String,
-            let creatorName = data["creatorName"] as? String,
-            let participants = data["participants"] as? [String],
-            let createdAtTimestamp = data["createdAt"] as? Timestamp
+            let creatorName = data["creatorName"] as? String
         else {
             return nil
         }
 
+        let normalizedCategoryRaw = categoryRaw.lowercased()
+        guard let category = SessionCategory(rawValue: normalizedCategoryRaw) else { return nil }
+
+        let createdAt = parseDate(data["createdAt"]) ?? Date.distantPast
+        let scheduledAt = parseDate(data["scheduledAt"]) ?? createdAt
+        let participants = data["participants"] as? [String] ?? []
+
         return StudySession(
             id: id,
             title: title,
-            scheduledAt: scheduledAtTimestamp.dateValue(),
+            scheduledAt: scheduledAt,
             category: category,
             creatorId: creatorId,
             creatorName: creatorName,
             participants: participants,
-            createdAt: createdAtTimestamp.dateValue()
+            createdAt: createdAt
         )
+    }
+
+    private func parseDate(_ value: Any?) -> Date? {
+        if let timestamp = value as? Timestamp {
+            return timestamp.dateValue()
+        }
+        if let date = value as? Date {
+            return date
+        }
+        return nil
     }
 }
 

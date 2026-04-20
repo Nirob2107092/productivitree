@@ -27,6 +27,10 @@ class StudySessionViewModel: ObservableObject {
         studySessionService.fetchAllSessions()
     }
 
+    func stopListening() {
+        studySessionService.stopListening()
+    }
+
     func displayName(for userId: String) -> String {
         studySessionService.displayName(for: userId)
     }

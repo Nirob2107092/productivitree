@@ -51,7 +51,16 @@ struct StudySessionListView: View {
                 CreateSessionView(viewModel: viewModel)
             }
             .onAppear {
-                viewModel.startListening()
+                if authService.currentUser != nil {
+                    viewModel.startListening()
+                }
+            }
+            .onChange(of: authService.currentUser?.uid) { _, userId in
+                if userId != nil {
+                    viewModel.startListening()
+                } else {
+                    viewModel.stopListening()
+                }
             }
             .overlay(alignment: .top) {
                 if let errorMessage = viewModel.errorMessage {
