@@ -42,13 +42,12 @@ struct HabitListView: View {
             }
             .navigationTitle("Habits")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         viewModel.showAddHabit = true
                     } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(.orange)
+                        Label("Add Habit", systemImage: "plus")
+                            .labelStyle(.iconOnly)
                     }
                 }
             }

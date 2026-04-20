@@ -10,6 +10,7 @@ struct FocusTimerView: View {
     @StateObject private var focusService: FocusService
     @StateObject private var viewModel: FocusViewModel
     @StateObject private var soundService = AmbientSoundService()
+    @State private var showSessionSetup = false
     @State private var showSoundSheet = false
 
     init() {
@@ -36,7 +37,14 @@ struct FocusTimerView: View {
             }
             .navigationTitle("Focus")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSessionSetup = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showSoundSheet = true
                     } label: {
@@ -45,13 +53,17 @@ struct FocusTimerView: View {
                               : "speaker.wave.2.fill")
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         FocusHistoryView(focusService: focusService)
                     } label: {
                         Image(systemName: "clock.arrow.circlepath")
                     }
                 }
+            }
+            .sheet(isPresented: $showSessionSetup) {
+                FocusSessionSetupSheet(viewModel: viewModel)
+                    .presentationDetents([.medium])
             }
             .sheet(isPresented: $showSoundSheet) {
                 AmbientSoundSheet(service: soundService)
@@ -250,6 +262,73 @@ struct FocusTimerView: View {
         case .deepWork: return .purple
         case .learning: return .blue
         case .creating: return .orange
+        }
+    }
+}
+
+private struct FocusSessionSetupSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var viewModel: FocusViewModel
+
+    private let presets: [Int] = [15, 25, 50]
+    @State private var selectedMinutes: Int = 25
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Mode")
+                        .font(.headline)
+
+                    Picker("Mode", selection: Binding(
+                        get: { viewModel.selectedMode },
+                        set: { viewModel.selectMode($0) }
+                    )) {
+                        ForEach(FocusMode.allCases, id: \.self) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Quick Duration")
+                        .font(.headline)
+
+                    HStack(spacing: 10) {
+                        ForEach(presets, id: \.self) { minutes in
+                            Button {
+                                selectedMinutes = minutes
+                                viewModel.setSessionDuration(minutes: minutes)
+                            } label: {
+                                Text("\(minutes) min")
+                                    .fontWeight(selectedMinutes == minutes ? .semibold : .regular)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(selectedMinutes == minutes ? Color.green.opacity(0.18) : Color.gray.opacity(0.10))
+                                    .foregroundColor(selectedMinutes == minutes ? .green : .primary)
+                                    .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Done")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                }
+            }
+            .padding()
+            .navigationTitle("New Focus Session")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

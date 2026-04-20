@@ -90,6 +90,15 @@ class FocusViewModel: ObservableObject {
         applyDurationForCurrentPhase()
     }
 
+    func setSessionDuration(minutes: Int) {
+        guard !isRunning else { return }
+        pomodoroEnabled = false
+        pomodoroPhase = .idle
+        pomodoroCycle = 1
+        totalSeconds = minutes * 60
+        timeRemaining = totalSeconds
+    }
+
     // MARK: - Pomodoro
 
     func setPomodoroEnabled(_ enabled: Bool) {
