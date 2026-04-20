@@ -23,14 +23,10 @@ struct MainTabView: View {
                 }
 
             // Focus Tab
-            NavigationStack {
-                Text("Focus")
-                    .font(.title)
-                    .navigationTitle("Focus")
-            }
-            .tabItem {
-                Label("Focus", systemImage: "timer")
-            }
+            FocusTimerView()
+                .tabItem {
+                    Label("Focus", systemImage: "timer")
+                }
 
             // Sessions Tab
             NavigationStack {
