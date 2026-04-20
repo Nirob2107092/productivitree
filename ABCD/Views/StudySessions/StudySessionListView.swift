@@ -50,17 +50,12 @@ struct StudySessionListView: View {
             .sheet(isPresented: $viewModel.showCreateSession) {
                 CreateSessionView(viewModel: viewModel)
             }
-            .onAppear {
-                if authService.currentUser != nil {
-                    viewModel.startListening()
-                }
+            .task(id: authService.currentUser?.uid) {
+                guard authService.currentUser?.uid != nil else { return }
+                viewModel.startListening()
             }
-            .onChange(of: authService.currentUser?.uid) { _, userId in
-                if userId != nil {
-                    viewModel.startListening()
-                } else {
-                    viewModel.stopListening()
-                }
+            .onDisappear {
+                viewModel.stopListening()
             }
             .overlay(alignment: .top) {
                 if let errorMessage = viewModel.errorMessage {

@@ -246,17 +246,19 @@ class StudySessionService: ObservableObject {
     }
 
     private func decodeSession(data: [String: Any], id: String) -> StudySession? {
-        guard
-            let title = data["title"] as? String,
-            let categoryRaw = data["category"] as? String,
-            let creatorId = data["creatorId"] as? String,
-            let creatorName = data["creatorName"] as? String
-        else {
+        guard let title = data["title"] as? String else {
             return nil
         }
 
-        let normalizedCategoryRaw = categoryRaw.lowercased()
-        guard let category = SessionCategory(rawValue: normalizedCategoryRaw) else { return nil }
+        let creatorId = (data["creatorId"] as? String)
+            ?? (data["userId"] as? String)
+            ?? "unknown"
+        let creatorName = (data["creatorName"] as? String)
+            ?? (data["displayName"] as? String)
+            ?? creatorId
+
+        let categoryRaw = (data["category"] as? String)?.lowercased() ?? "study"
+        let category = SessionCategory(rawValue: categoryRaw) ?? .study
 
         let createdAt = parseDate(data["createdAt"]) ?? Date.distantPast
         let scheduledAt = parseDate(data["scheduledAt"]) ?? createdAt
