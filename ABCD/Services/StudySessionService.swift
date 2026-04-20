@@ -98,11 +98,11 @@ class StudySessionService: ObservableObject {
     func joinSession(sessionId: String, userId: String) {
         validateAndUpdate(sessionId: sessionId, userId: userId) { session in
             guard session.creatorId != userId else {
-                return .failure("You cannot join your own session.")
+                return .failure(.message("You cannot join your own session."))
             }
 
             guard !session.participants.contains(userId) else {
-                return .failure("You are already in this session.")
+                return .failure(.message("You are already in this session."))
             }
 
             return .success([
@@ -116,7 +116,7 @@ class StudySessionService: ObservableObject {
     func leaveSession(sessionId: String, userId: String) {
         validateAndUpdate(sessionId: sessionId, userId: userId) { session in
             guard session.participants.contains(userId) else {
-                return .failure("You are not part of this session.")
+                return .failure(.message("You are not part of this session."))
             }
 
             return .success([
@@ -165,10 +165,20 @@ class StudySessionService: ObservableObject {
 
     // MARK: - Shared Validation Helper
 
+    private enum ValidationFailure: Error {
+        case message(String)
+
+        var description: String {
+            switch self {
+            case .message(let text): return text
+            }
+        }
+    }
+
     private func validateAndUpdate(
         sessionId: String,
         userId: String,
-        update: @escaping (StudySession) -> Result<[String: Any], String>
+        update: @escaping (StudySession) -> Result<[String: Any], ValidationFailure>
     ) {
         db.collection(Constants.Collections.studySessions)
             .document(sessionId)
@@ -198,8 +208,8 @@ class StudySessionService: ObservableObject {
                                     }
                                 }
                             }
-                    case .failure(let message):
-                        self.errorMessage = message
+                    case .failure(let failure):
+                        self.errorMessage = failure.description
                     }
                 }
             }
