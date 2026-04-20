@@ -6,6 +6,7 @@
 import Foundation
 import Combine
 import FirebaseFirestore
+import FirebaseFirestoreSwift
 
 class TaskService: ObservableObject {
     @Published var tasks: [TaskModel] = []

@@ -6,6 +6,7 @@
 import Foundation
 import Combine
 import FirebaseFirestore
+import FirebaseFirestoreSwift
 
 class StudySessionService: ObservableObject {
     @Published var sessions: [StudySession] = []

@@ -6,6 +6,7 @@
 import Foundation
 import Combine
 import FirebaseFirestore
+import FirebaseFirestoreSwift
 
 class HabitService: ObservableObject {
     @Published var habits: [HabitModel] = []
