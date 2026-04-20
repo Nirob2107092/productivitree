@@ -10,6 +10,18 @@ struct EmptyStateView: View {
     let title: String
     let message: String
 
+    init(icon: String, title: String, message: String) {
+        self.icon = icon
+        self.title = title
+        self.message = message
+    }
+
+    init(message: String) {
+        self.icon = "chart.bar"
+        self.title = "No Data Yet"
+        self.message = message
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icon)

@@ -11,6 +11,20 @@ struct StatCard: View {
     let iconName: String
     let tint: Color
 
+    init(title: String, value: String, iconName: String, tint: Color) {
+        self.title = title
+        self.value = value
+        self.iconName = iconName
+        self.tint = tint
+    }
+
+    init(icon: String, title: String, value: String, color: Color) {
+        self.title = title
+        self.value = value
+        self.iconName = icon
+        self.tint = color
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: iconName)

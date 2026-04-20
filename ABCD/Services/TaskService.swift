@@ -40,6 +40,27 @@ class TaskService: ObservableObject {
             }
     }
 
+    // MARK: - Fetch Completed Tasks (One-Shot)
+
+    func fetchCompletedTasks(userId: String) async throws -> [TaskModel] {
+        do {
+            let snapshot = try await db.collection(Constants.Collections.tasks)
+                .whereField("userId", isEqualTo: userId)
+                .whereField("isCompleted", isEqualTo: true)
+                .order(by: "completedAt", descending: true)
+                .getDocuments()
+
+            return snapshot.documents.compactMap { document in
+                try? document.data(as: TaskModel.self)
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to fetch completed tasks: \(error.localizedDescription)"
+            }
+            throw error
+        }
+    }
+
     // MARK: - Create Task
 
     func createTask(task: TaskModel) {

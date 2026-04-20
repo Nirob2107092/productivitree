@@ -39,6 +39,26 @@ class FocusService: ObservableObject {
             }
     }
 
+    // MARK: - Fetch Session History (One-Shot)
+
+    func fetchSessionHistoryOnce(userId: String) async throws -> [FocusSessionModel] {
+        do {
+            let snapshot = try await db.collection(Constants.Collections.focusSessions)
+                .whereField("userId", isEqualTo: userId)
+                .order(by: "completedAt", descending: true)
+                .getDocuments()
+
+            return snapshot.documents.compactMap { document in
+                try? document.data(as: FocusSessionModel.self)
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to fetch session history: \(error.localizedDescription)"
+            }
+            throw error
+        }
+    }
+
     // MARK: - Save Session
 
     func saveSession(session: FocusSessionModel) {

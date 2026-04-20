@@ -7,12 +7,20 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject var authService: AuthService
+    @StateObject private var habitService = HabitService()
+    @StateObject private var habitViewModel: HabitViewModel
     @StateObject private var viewModel = ProfileViewModel()
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
+
+    init() {
+        let service = HabitService()
+        _habitService = StateObject(wrappedValue: service)
+        _habitViewModel = StateObject(wrappedValue: HabitViewModel(habitService: service))
+    }
 
     var body: some View {
         ScrollView {
@@ -35,6 +43,7 @@ struct ProfileView: View {
         .onAppear {
             if let userId = authService.currentUser?.uid {
                 viewModel.load(userId: userId)
+                habitViewModel.startListening(userId: userId)
             }
         }
         .onChange(of: authService.userModel?.xp) { _, _ in
@@ -126,6 +135,15 @@ struct ProfileView: View {
                 iconName: "flame.fill",
                 tint: Theme.Colors.warning
             )
+
+            NavigationLink(destination: AnalyticsView(
+                focusSessions: viewModel.focusSessions,
+                completedTasks: viewModel.completedTasks,
+                habits: habitViewModel.habitService.habits
+            )) {
+                StatCard(icon: "chart.bar.fill", title: "Analytics", value: "View →", color: .purple)
+            }
+            .buttonStyle(.plain)
         }
     }
 

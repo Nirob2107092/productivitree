@@ -8,8 +8,11 @@ import Combine
 
 @MainActor
 final class ProfileViewModel: ObservableObject {
+    @Published var user: UserModel?
     @Published var userStats: UserStats = .empty
     @Published var quote: Quote?
+    @Published var focusSessions: [FocusSessionModel] = []
+    @Published var completedTasks: [TaskModel] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var showLevelUpAlert = false
@@ -17,15 +20,21 @@ final class ProfileViewModel: ObservableObject {
 
     private let quoteService: QuoteService
     private let userStatsService: UserStatsService
+    private let focusService: FocusService
+    private let taskService: TaskService
     private var cancellables = Set<AnyCancellable>()
     private var activeUserId: String?
 
     init(
         quoteService: QuoteService = QuoteService(),
-        userStatsService: UserStatsService = UserStatsService()
+        userStatsService: UserStatsService = UserStatsService(),
+        focusService: FocusService = FocusService(),
+        taskService: TaskService = TaskService()
     ) {
         self.quoteService = quoteService
         self.userStatsService = userStatsService
+        self.focusService = focusService
+        self.taskService = taskService
         observeLevelUp()
     }
 
@@ -42,10 +51,28 @@ final class ProfileViewModel: ObservableObject {
                 let (stats, fetchedQuote) = try await (statsTask, quoteTask)
                 userStats = stats
                 quote = fetchedQuote
+                loadAnalyticsData(userId: userId)
                 isLoading = false
             } catch {
                 isLoading = false
                 errorMessage = "Could not load profile data."
+            }
+        }
+    }
+
+    func loadAnalyticsData(userId: String) {
+        Task {
+            do {
+                focusService.fetchSessionHistory(userId: userId)
+
+                async let focusHistoryTask = focusService.fetchSessionHistoryOnce(userId: userId)
+                async let completedTasksTask = taskService.fetchCompletedTasks(userId: userId)
+
+                let (history, tasks) = try await (focusHistoryTask, completedTasksTask)
+                focusSessions = history
+                completedTasks = tasks
+            } catch {
+                errorMessage = "Could not load analytics data."
             }
         }
     }

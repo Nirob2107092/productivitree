@@ -68,6 +68,7 @@ struct HabitListView: View {
 struct HabitRowView: View {
     let habit: HabitModel
     @ObservedObject var viewModel: HabitViewModel
+    @State private var isExpanded = false
 
     private var completedToday: Bool {
         viewModel.isCompletedToday(habit)
@@ -108,14 +109,24 @@ struct HabitRowView: View {
                 .padding(.vertical, 5)
                 .background(Color.orange.opacity(0.1))
                 .cornerRadius(10)
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                        .padding(.leading, 4)
+                }
+                .buttonStyle(.plain)
             }
 
-            // 14-day streak visualization
-            StreakVisualization(
-                completedDates: habit.completedDates,
-                recentDates: viewModel.recentDateStrings(count: 14)
-            )
-            .padding(.leading, 36)
+            if isExpanded {
+                HabitHeatmapView(habit: habit)
+                    .padding(.leading, 36)
+            }
 
             // Best streak footnote
             if habit.bestStreak > 0 {
