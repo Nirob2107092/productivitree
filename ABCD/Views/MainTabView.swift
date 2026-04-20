@@ -36,33 +36,12 @@ struct MainTabView: View {
 
             // Profile Tab
             NavigationStack {
-                VStack(spacing: 20) {
-                    if let user = authService.userModel {
-                        Text("Welcome, \(user.displayName)!")
-                            .font(.title2)
-                        Text("Level \(user.level) | \(user.xp) XP")
-                            .foregroundColor(.secondary)
-                    }
-
-                    Button(role: .destructive) {
-                        authService.logout()
-                    } label: {
-                        Text("Log Out")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red.opacity(0.1))
-                            .foregroundColor(.red)
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal)
-                }
-                .navigationTitle("Profile")
+                ProfileView()
             }
             .tabItem {
                 Label("Profile", systemImage: "person.circle.fill")
             }
         }
-        .tint(.green)
+        .tint(Theme.Colors.accent)
     }
 }

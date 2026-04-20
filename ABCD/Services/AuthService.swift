@@ -15,6 +15,7 @@ class AuthService: ObservableObject {
 
     private let db = Firestore.firestore()
     private var authStateListener: AuthStateDidChangeListenerHandle?
+    private var userDocumentListener: ListenerRegistration?
 
     init() {
         listenToAuthState()
@@ -24,6 +25,7 @@ class AuthService: ObservableObject {
         if let handle = authStateListener {
             Auth.auth().removeStateDidChangeListener(handle)
         }
+        userDocumentListener?.remove()
     }
 
     // MARK: - Auth State Listener
@@ -97,6 +99,8 @@ class AuthService: ObservableObject {
         do {
             try Auth.auth().signOut()
             DispatchQueue.main.async {
+                self.userDocumentListener?.remove()
+                self.userDocumentListener = nil
                 self.currentUser = nil
                 self.userModel = nil
                 self.errorMessage = nil
@@ -137,9 +141,11 @@ class AuthService: ObservableObject {
     }
 
     func fetchUserDocument(userId: String) {
-        db.collection(Constants.Collections.users)
+        userDocumentListener?.remove()
+
+        userDocumentListener = db.collection(Constants.Collections.users)
             .document(userId)
-            .getDocument { [weak self] snapshot, error in
+            .addSnapshotListener { [weak self] snapshot, error in
                 DispatchQueue.main.async {
                     if let error = error {
                         self?.errorMessage = error.localizedDescription

@@ -7,12 +7,10 @@ import SwiftUI
 
 struct StudySessionListView: View {
     @EnvironmentObject var authService: AuthService
-    @StateObject private var sessionService = StudySessionService()
     @StateObject private var viewModel: StudySessionViewModel
 
     init() {
         let service = StudySessionService()
-        _sessionService = StateObject(wrappedValue: service)
         _viewModel = StateObject(wrappedValue: StudySessionViewModel(studySessionService: service))
     }
 
