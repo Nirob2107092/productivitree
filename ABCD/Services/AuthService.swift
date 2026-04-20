@@ -43,16 +43,18 @@ class AuthService: ObservableObject {
 
     // MARK: - Register
 
-    func register(email: String, password: String, displayName: String) {
+    func register(email: String, password: String, displayName: String, completion: ((Bool) -> Void)? = nil) {
         Auth.auth().createUser(withEmail: email, password: password) { [weak self] result, error in
             DispatchQueue.main.async {
                 if let error = error {
                     self?.errorMessage = error.localizedDescription
+                    completion?(false)
                     return
                 }
 
                 guard let firebaseUser = result?.user else {
                     self?.errorMessage = "Registration failed. Please try again."
+                    completion?(false)
                     return
                 }
 
@@ -68,20 +70,23 @@ class AuthService: ObservableObject {
                 )
 
                 self?.createUserDocument(user: newUser)
+                completion?(true)
             }
         }
     }
 
     // MARK: - Login
 
-    func login(email: String, password: String) {
+    func login(email: String, password: String, completion: ((Bool) -> Void)? = nil) {
         Auth.auth().signIn(withEmail: email, password: password) { [weak self] _, error in
             DispatchQueue.main.async {
                 if let error = error {
                     self?.errorMessage = error.localizedDescription
+                    completion?(false)
                     return
                 }
                 self?.errorMessage = nil
+                completion?(true)
             }
         }
     }
