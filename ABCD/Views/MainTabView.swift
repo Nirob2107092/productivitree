@@ -29,11 +29,7 @@ struct MainTabView: View {
                 }
 
             // Sessions Tab
-            NavigationStack {
-                Text("Sessions")
-                    .font(.title)
-                    .navigationTitle("Study Sessions")
-            }
+            StudySessionListView()
             .tabItem {
                 Label("Sessions", systemImage: "person.2.fill")
             }
