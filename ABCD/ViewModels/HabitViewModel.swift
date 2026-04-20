@@ -36,6 +36,7 @@ class HabitViewModel: ObservableObject {
             userId: userId,
             title: title,
             completedDates: [],
+            xpAwardedDates: [],
             currentStreak: 0,
             bestStreak: 0,
             createdAt: Date()

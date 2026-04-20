@@ -86,6 +86,8 @@ class TaskService: ObservableObject {
     // MARK: - Complete Task
 
     func completeTask(task: TaskModel) {
+        guard !task.isCompleted else { return }
+
         var updatedTask = task
         updatedTask.isCompleted = true
         updatedTask.completedAt = Date()

@@ -74,7 +74,10 @@ class HabitService: ObservableObject {
         } else {
             // Not yet completed today — mark complete and award XP
             updatedHabit.completedDates.append(today)
-            GamificationService.shared.addXP(userId: habit.userId, amount: Constants.XP.habitCompleted)
+            if !updatedHabit.xpAwardedDates.contains(today) {
+                GamificationService.shared.addXP(userId: habit.userId, amount: Constants.XP.habitCompleted)
+                updatedHabit.xpAwardedDates.append(today)
+            }
         }
 
         // Recalculate streaks after any change
