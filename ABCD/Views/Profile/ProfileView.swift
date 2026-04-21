@@ -4,12 +4,16 @@
 //
 
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct ProfileView: View {
     @EnvironmentObject var authService: AuthService
     @StateObject private var habitService = HabitService()
     @StateObject private var habitViewModel: HabitViewModel
     @StateObject private var viewModel = ProfileViewModel()
+    @State private var displayedTreeStage: TreeStage = .seed
+    @State private var displayedEnvironment: EnvironmentType = .normal
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -26,6 +30,7 @@ struct ProfileView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
+                treeWorldSection
                 xpSection
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
@@ -45,6 +50,13 @@ struct ProfileView: View {
                 viewModel.load(userId: userId)
                 habitViewModel.startListening(userId: userId)
             }
+            syncTreeState(animated: false)
+        }
+        .onChange(of: authService.userModel?.treeStage) { _, _ in
+            syncTreeState(animated: true)
+        }
+        .onChange(of: authService.userModel?.environment) { _, _ in
+            syncTreeState(animated: true)
         }
         .onChange(of: authService.userModel?.xp) { _, _ in
             reloadProfileData()
@@ -85,6 +97,24 @@ struct ProfileView: View {
             }
 
             Spacer()
+        }
+        .padding()
+        .background(Theme.Colors.surface)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Theme.Colors.stroke, lineWidth: 1)
+        )
+        .cornerRadius(14)
+    }
+
+    private var treeWorldSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Tree World")
+                .font(.headline)
+
+            TreeView(stage: displayedTreeStage, environment: displayedEnvironment)
+                .animation(.easeInOut(duration: 0.5), value: displayedTreeStage)
+                .animation(.easeInOut(duration: 0.5), value: displayedEnvironment)
         }
         .padding()
         .background(Theme.Colors.surface)
@@ -207,5 +237,20 @@ struct ProfileView: View {
     private func reloadProfileData() {
         guard let userId = authService.currentUser?.uid else { return }
         viewModel.load(userId: userId)
+    }
+
+    private func syncTreeState(animated: Bool) {
+        let stage = authService.userModel?.treeStage ?? .seed
+        let environment = authService.userModel?.environment ?? .normal
+
+        if animated {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                displayedTreeStage = stage
+                displayedEnvironment = environment
+            }
+        } else {
+            displayedTreeStage = stage
+            displayedEnvironment = environment
+        }
     }
 }

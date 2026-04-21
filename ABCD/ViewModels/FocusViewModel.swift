@@ -183,6 +183,7 @@ class FocusViewModel: ObservableObject {
             )
             focusService.saveSession(session: session)
             focusService.updateTotalFocusTime(userId: userId, minutes: minutes)
+            GamificationService.shared.registerActivity(userId: userId, at: Date())
         }
 
         if pomodoroEnabled {

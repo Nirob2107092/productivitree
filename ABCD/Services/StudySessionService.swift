@@ -24,6 +24,24 @@ class StudySessionService: ObservableObject {
     func fetchAllSessions() {
         listener?.remove()
 
+        db.collection(Constants.Collections.studySessions)
+            .getDocuments { [weak self] snapshot, error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        self?.errorMessage = error.localizedDescription
+                        return
+                    }
+
+                    let loadedSessions = (snapshot?.documents.compactMap { document in
+                        self?.decodeSession(from: document)
+                    } ?? [])
+                    .sorted { $0.createdAt > $1.createdAt }
+
+                    self?.sessions = loadedSessions
+                    self?.fetchParticipantDisplayNames(from: loadedSessions)
+                }
+            }
+
         listener = db.collection(Constants.Collections.studySessions)
             .addSnapshotListener { [weak self] snapshot, error in
                 DispatchQueue.main.async {
@@ -47,8 +65,29 @@ class StudySessionService: ObservableObject {
     func stopListening() {
         listener?.remove()
         listener = nil
-        sessions = []
-        participantDisplayNames = [:]
+    }
+
+    // MARK: - Listen To Single Session
+
+    func listenToSession(sessionId: String, onChange: @escaping (StudySession?) -> Void) -> ListenerRegistration {
+        db.collection(Constants.Collections.studySessions)
+            .document(sessionId)
+            .addSnapshotListener { [weak self] snapshot, error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        self?.errorMessage = error.localizedDescription
+                        onChange(nil)
+                        return
+                    }
+
+                    guard let snapshot = snapshot, snapshot.exists else {
+                        onChange(nil)
+                        return
+                    }
+
+                    onChange(self?.decodeSession(from: snapshot))
+                }
+            }
     }
 
     // MARK: - Resolve Participant Display Names
@@ -127,8 +166,89 @@ class StudySessionService: ObservableObject {
                 return .failure(.message("You are not part of this session."))
             }
 
-            return .success([
+            var updates: [String: Any] = [
                 "participants": FieldValue.arrayRemove([userId])
+            ]
+
+            if session.isActive {
+                updates["activeParticipants"] = FieldValue.arrayRemove([userId])
+                updates["leftParticipants"] = FieldValue.arrayUnion([userId])
+            }
+
+            return .success(updates)
+        }
+    }
+
+    // MARK: - Focus Together Controls
+
+    func startSession(sessionId: String, userId: String, duration: Int) {
+        validateAndUpdate(sessionId: sessionId, userId: userId) { session in
+            guard session.creatorId == userId else {
+                return .failure(.message("Only the creator can start this session."))
+            }
+
+            guard !session.isActive else {
+                return .failure(.message("Session is already active."))
+            }
+
+            let starterParticipants = Array(Set(session.participants + [session.creatorId]))
+
+            return .success([
+                "isActive": true,
+                "startTime": Timestamp(date: Date()),
+                "durationMinutes": max(duration, 1),
+                "participants": starterParticipants,
+                "activeParticipants": starterParticipants,
+                "leftParticipants": [],
+                "lastLeaderboard": []
+            ])
+        }
+    }
+
+    func joinActiveSession(sessionId: String, userId: String) {
+        validateAndUpdate(sessionId: sessionId, userId: userId) { session in
+            guard session.isActive else {
+                return .failure(.message("Session has not started yet."))
+            }
+
+            return .success([
+                "participants": FieldValue.arrayUnion([userId]),
+                "activeParticipants": FieldValue.arrayUnion([userId]),
+                "leftParticipants": FieldValue.arrayRemove([userId])
+            ])
+        }
+    }
+
+    func leaveActiveSession(sessionId: String, userId: String) {
+        validateAndUpdate(sessionId: sessionId, userId: userId) { session in
+            guard session.isActive else {
+                return .failure(.message("Session is not active."))
+            }
+
+            guard session.activeParticipants.contains(userId) else {
+                return .failure(.message("You are not active in this session."))
+            }
+
+            return .success([
+                "activeParticipants": FieldValue.arrayRemove([userId]),
+                "leftParticipants": FieldValue.arrayUnion([userId])
+            ])
+        }
+    }
+
+    func endSession(sessionId: String, userId: String) {
+        validateAndUpdate(sessionId: sessionId, userId: userId) { session in
+            guard session.creatorId == userId else {
+                return .failure(.message("Only the creator can end this session."))
+            }
+
+            let winners = session.participants.filter { !session.leftParticipants.contains($0) }
+            let leaderboard = winners + session.leftParticipants
+
+            return .success([
+                "isActive": false,
+                "activeParticipants": [],
+                "lastLeaderboard": leaderboard
             ])
         }
     }
@@ -224,7 +344,7 @@ class StudySessionService: ObservableObject {
     }
 
     private func sessionData(from session: StudySession) -> [String: Any] {
-        [
+        var data: [String: Any] = [
             "id": session.id,
             "title": session.title,
             "scheduledAt": Timestamp(date: session.scheduledAt),
@@ -232,8 +352,21 @@ class StudySessionService: ObservableObject {
             "creatorId": session.creatorId,
             "creatorName": session.creatorName,
             "participants": session.participants,
+            "activeParticipants": session.activeParticipants,
+            "isActive": session.isActive,
+            "durationMinutes": session.durationMinutes,
+            "leftParticipants": session.leftParticipants,
+            "lastLeaderboard": session.lastLeaderboard,
             "createdAt": Timestamp(date: session.createdAt)
         ]
+
+        if let startTime = session.startTime {
+            data["startTime"] = Timestamp(date: startTime)
+        } else {
+            data["startTime"] = NSNull()
+        }
+
+        return data
     }
 
     private func decodeSession(from doc: QueryDocumentSnapshot) -> StudySession? {
@@ -263,6 +396,12 @@ class StudySessionService: ObservableObject {
         let createdAt = parseDate(data["createdAt"]) ?? Date.distantPast
         let scheduledAt = parseDate(data["scheduledAt"]) ?? createdAt
         let participants = data["participants"] as? [String] ?? []
+        let activeParticipants = data["activeParticipants"] as? [String] ?? []
+        let isActive = data["isActive"] as? Bool ?? false
+        let startTime = parseDate(data["startTime"])
+        let durationMinutes = data["durationMinutes"] as? Int ?? 25
+        let leftParticipants = data["leftParticipants"] as? [String] ?? []
+        let lastLeaderboard = data["lastLeaderboard"] as? [String] ?? []
 
         return StudySession(
             id: id,
@@ -272,6 +411,12 @@ class StudySessionService: ObservableObject {
             creatorId: creatorId,
             creatorName: creatorName,
             participants: participants,
+            activeParticipants: activeParticipants,
+            isActive: isActive,
+            startTime: startTime,
+            durationMinutes: durationMinutes,
+            leftParticipants: leftParticipants,
+            lastLeaderboard: lastLeaderboard,
             createdAt: createdAt
         )
     }

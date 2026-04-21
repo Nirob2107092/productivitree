@@ -4,6 +4,8 @@
 //
 
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct StudySessionListView: View {
     @EnvironmentObject var authService: AuthService
@@ -50,12 +52,17 @@ struct StudySessionListView: View {
             .sheet(isPresented: $viewModel.showCreateSession) {
                 CreateSessionView(viewModel: viewModel)
             }
-            .task(id: authService.currentUser?.uid) {
-                guard authService.currentUser?.uid != nil else { return }
-                viewModel.startListening()
+            .onAppear {
+                if authService.currentUser?.uid != nil {
+                    viewModel.startListening()
+                }
             }
-            .onDisappear {
-                viewModel.stopListening()
+            .onChange(of: authService.currentUser?.uid) { _, userId in
+                if userId != nil {
+                    viewModel.startListening()
+                } else {
+                    viewModel.stopListening()
+                }
             }
             .overlay(alignment: .top) {
                 if let errorMessage = viewModel.errorMessage {
@@ -92,6 +99,10 @@ private struct StudySessionRow: View {
             HStack(spacing: 14) {
                 Label(formattedDate(session.scheduledAt), systemImage: "calendar")
                 Label("\(session.participants.count) participant\(session.participants.count == 1 ? "" : "s")", systemImage: "person.2")
+                if session.isActive {
+                    Label("Live", systemImage: "dot.radiowaves.left.and.right")
+                        .foregroundColor(.green)
+                }
             }
             .font(.caption)
             .foregroundColor(.secondary)

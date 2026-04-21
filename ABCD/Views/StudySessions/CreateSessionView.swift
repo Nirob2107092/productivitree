@@ -4,6 +4,8 @@
 //
 
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct CreateSessionView: View {
     @EnvironmentObject var authService: AuthService

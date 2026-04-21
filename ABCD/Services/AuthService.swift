@@ -123,7 +123,11 @@ class AuthService: ObservableObject {
             "level": user.level,
             "tasksCompleted": user.tasksCompleted,
             "totalFocusMinutes": user.totalFocusMinutes,
-            "createdAt": Timestamp(date: user.createdAt)
+            "createdAt": Timestamp(date: user.createdAt),
+            "treeLevel": user.treeLevel,
+            "treeStage": user.treeStage.rawValue,
+            "environment": user.environment.rawValue,
+            "lastTreeUpdate": user.lastTreeUpdate.map(Timestamp.init(date:)) ?? NSNull()
         ]
 
         db.collection(Constants.Collections.users)
@@ -159,6 +163,9 @@ class AuthService: ObservableObject {
                     }
 
                     let createdTimestamp = data["createdAt"] as? Timestamp
+                    let lastTreeUpdateTimestamp = data["lastTreeUpdate"] as? Timestamp
+                    let treeStageRaw = data["treeStage"] as? String
+                    let environmentRaw = data["environment"] as? String
                     let user = UserModel(
                         id: data["id"] as? String ?? userId,
                         email: data["email"] as? String ?? "",
@@ -167,7 +174,11 @@ class AuthService: ObservableObject {
                         level: data["level"] as? Int ?? 0,
                         tasksCompleted: data["tasksCompleted"] as? Int ?? 0,
                         totalFocusMinutes: data["totalFocusMinutes"] as? Int ?? 0,
-                        createdAt: createdTimestamp?.dateValue() ?? Date()
+                        createdAt: createdTimestamp?.dateValue() ?? Date(),
+                        treeLevel: data["treeLevel"] as? Int ?? 1,
+                        treeStage: TreeStage(rawValue: treeStageRaw ?? "") ?? .seed,
+                        environment: EnvironmentType(rawValue: environmentRaw ?? "") ?? .normal,
+                        lastTreeUpdate: lastTreeUpdateTimestamp?.dateValue()
                     )
                     self?.userModel = user
                 }

@@ -37,20 +37,35 @@ service cloud.firestore {
         && resource.data.creatorId == request.auth.uid;
 
       allow update: if request.auth != null
-        // Only participants array can change during update.
-        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['participants'])
-        // The requester can only add themselves or remove themselves.
         && (
+          // Creator can control session lifecycle and participant state fields.
           (
-            !(request.auth.uid in resource.data.participants)
-            && request.auth.uid in request.resource.data.participants
-            && request.resource.data.participants.size() == resource.data.participants.size() + 1
+            request.auth.uid == resource.data.creatorId
+            && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+              'participants',
+              'activeParticipants',
+              'isActive',
+              'startTime',
+              'durationMinutes',
+              'leftParticipants',
+              'lastLeaderboard'
+            ])
           )
           ||
+          // Non-creator participants can only join/leave participant and active arrays for themselves.
           (
-            request.auth.uid in resource.data.participants
-            && !(request.auth.uid in request.resource.data.participants)
-            && request.resource.data.participants.size() == resource.data.participants.size() - 1
+            request.auth.uid != resource.data.creatorId
+            && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+              'participants',
+              'activeParticipants',
+              'leftParticipants'
+            ])
+            && (
+              request.auth.uid in resource.data.participants
+              || request.auth.uid in request.resource.data.participants
+            )
+            && request.resource.data.participants.size() <= resource.data.participants.size() + 1
+            && request.resource.data.participants.size() >= resource.data.participants.size() - 1
           )
         );
     }

@@ -122,9 +122,11 @@ class TaskService: ObservableObject {
                     return
                 }
 
-                // Award XP and increment stats only after successful write.
-                GamificationService.shared.addXP(userId: task.userId, amount: Constants.XP.taskCompleted)
-                GamificationService.shared.incrementTasksCompleted(userId: task.userId)
+                // Single gamification write path for XP + stats + tree update.
+                GamificationService.shared.applyTaskCompletion(
+                    userId: task.userId,
+                    xpAmount: Constants.XP.taskCompleted
+                )
             }
     }
 

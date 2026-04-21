@@ -14,7 +14,45 @@ struct StudySession: Codable, Identifiable {
     var creatorId: String
     var creatorName: String
     var participants: [String]
+    var activeParticipants: [String]
+    var isActive: Bool
+    var startTime: Date?
+    var durationMinutes: Int
+    var leftParticipants: [String]
+    var lastLeaderboard: [String]
     var createdAt: Date
+
+    init(
+        id: String,
+        title: String,
+        scheduledAt: Date,
+        category: SessionCategory,
+        creatorId: String,
+        creatorName: String,
+        participants: [String],
+        activeParticipants: [String] = [],
+        isActive: Bool = false,
+        startTime: Date? = nil,
+        durationMinutes: Int = 25,
+        leftParticipants: [String] = [],
+        lastLeaderboard: [String] = [],
+        createdAt: Date
+    ) {
+        self.id = id
+        self.title = title
+        self.scheduledAt = scheduledAt
+        self.category = category
+        self.creatorId = creatorId
+        self.creatorName = creatorName
+        self.participants = participants
+        self.activeParticipants = activeParticipants
+        self.isActive = isActive
+        self.startTime = startTime
+        self.durationMinutes = durationMinutes
+        self.leftParticipants = leftParticipants
+        self.lastLeaderboard = lastLeaderboard
+        self.createdAt = createdAt
+    }
 }
 
 enum SessionCategory: String, Codable, CaseIterable {
