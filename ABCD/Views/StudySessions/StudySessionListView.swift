@@ -18,13 +18,41 @@ struct StudySessionListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Study together with intention")
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(Theme.Colors.textPrimary)
+
+                            Text("\(viewModel.sessions.count) sessions available right now")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.Colors.textSecondary)
+                        }
+
+                        Spacer()
+
+                        ZStack {
+                            Circle()
+                                .fill(Theme.Colors.accentSecondary.opacity(0.14))
+                                .frame(width: 46, height: 46)
+
+                            Image(systemName: "person.2.fill")
+                                .font(.headline)
+                                .foregroundStyle(Theme.Colors.accentSecondary)
+                        }
+                    }
+                }
+                .appCard(fill: Theme.Colors.surfaceStrong)
+
                 if viewModel.sessions.isEmpty {
                     EmptyStateView(
                         icon: "person.2.fill",
                         title: "No Study Sessions Yet",
                         message: "Create a session and let others join for accountability."
                     )
+                    .frame(maxHeight: .infinity)
                 } else {
                     List {
                         ForEach(viewModel.sessions) { session in
@@ -34,12 +62,20 @@ struct StudySessionListView: View {
                                 StudySessionRow(session: session)
                             }
                             .buttonStyle(.plain)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 7, leading: 0, bottom: 7, trailing: 0))
+                            .listRowBackground(Color.clear)
                         }
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
+            .padding(.horizontal)
+            .padding(.top, 14)
+            .background(Theme.Gradients.appBackground.ignoresSafeArea())
             .navigationTitle("Study Sessions")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -82,11 +118,11 @@ private struct StudySessionRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(session.title)
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(Theme.Colors.textPrimary)
 
                     Text(session.creatorName)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.Colors.textSecondary)
                 }
 
                 Spacer()
@@ -103,9 +139,11 @@ private struct StudySessionRow: View {
                 }
             }
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(Theme.Colors.textSecondary)
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .appCard(fill: Theme.Colors.surfaceStrong, padding: 0)
     }
 
     private func formattedDate(_ date: Date) -> String {

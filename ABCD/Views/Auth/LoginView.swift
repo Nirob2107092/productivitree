@@ -18,22 +18,27 @@ struct LoginView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                // App branding
                 VStack(spacing: 8) {
-                    Image(systemName: "tree.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.green)
+                    ZStack {
+                        Circle()
+                            .fill(Theme.Colors.accent.opacity(0.12))
+                            .frame(width: 92, height: 92)
+
+                        Image(systemName: "tree.fill")
+                            .font(.system(size: 42))
+                            .foregroundColor(Theme.Colors.accent)
+                    }
 
                     Text("Productivitree")
                         .font(.largeTitle)
                         .fontWeight(.bold)
+                        .foregroundStyle(Theme.Colors.textPrimary)
 
                     Text("Grow your productivity")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.Colors.textSecondary)
                 }
 
-                // Input fields
                 VStack(spacing: 16) {
                     TextField("Email", text: $email)
                         .textFieldStyle(.roundedBorder)
@@ -47,8 +52,9 @@ struct LoginView: View {
                         .textContentType(.password)
                 }
                 .padding(.horizontal)
+                .padding(.vertical, 20)
+                .appCard(fill: Theme.Colors.surfaceStrong)
 
-                // Error message
                 if let error = authService.errorMessage {
                     Text(error)
                         .font(.caption)
@@ -57,7 +63,6 @@ struct LoginView: View {
                         .padding(.horizontal)
                 }
 
-                // Login button
                 Button {
                     login()
                 } label: {
@@ -65,24 +70,25 @@ struct LoginView: View {
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.green)
+                        .background(Theme.Gradients.accent)
                         .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
                 .padding(.horizontal)
                 .disabled(isLoading)
 
-                // Navigate to Register
                 Button {
                     showRegister = true
                 } label: {
                     Text("Don't have an account? Sign Up")
                         .font(.subheadline)
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.Colors.accent)
                 }
 
                 Spacer()
             }
+            .padding(.horizontal)
+            .background(Theme.Gradients.appBackground.ignoresSafeArea())
             .navigationDestination(isPresented: $showRegister) {
                 RegisterView()
             }

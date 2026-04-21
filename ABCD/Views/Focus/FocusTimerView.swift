@@ -21,21 +21,20 @@ struct FocusTimerView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 22) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 20) {
+                    headerCard
                     timerRing
-                        .padding(.top, 8)
-
                     modePicker
-
                     controlButtons
-
                     pomodoroSection
                 }
                 .padding(.horizontal)
-                .padding(.bottom, 24)
+                .padding(.vertical, 18)
             }
+            .background(Theme.Gradients.appBackground.ignoresSafeArea())
             .navigationTitle("Focus")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -75,7 +74,7 @@ struct FocusTimerView: View {
                     viewModel.startListening(userId: userId)
                 }
             }
-            .alert("Session Complete! 🎉", isPresented: $viewModel.showCompletionAlert) {
+            .alert("Session Complete!", isPresented: $viewModel.showCompletionAlert) {
                 Button("Great!", role: .cancel) { }
             } message: {
                 Text("You completed a \(viewModel.focusMinutes)-minute \(viewModel.selectedMode.displayName) session.")
@@ -83,45 +82,84 @@ struct FocusTimerView: View {
         }
     }
 
-    // MARK: - Timer Ring
+    private var headerCard: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Protect your best work block")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+
+                Text(viewModel.phaseIsBreak ? "Recovery is part of progress." : "Pick a mode and enter deep focus.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+            }
+
+            Spacer()
+
+            Label(viewModel.selectedMode.displayName, systemImage: viewModel.selectedMode.iconName)
+                .appChip(tint: ringColor)
+        }
+        .appCard(fill: Theme.Colors.surfaceStrong)
+    }
 
     private var timerRing: some View {
         ZStack {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.92),
+                            ringColor.opacity(0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
             Circle()
-                .stroke(Color.gray.opacity(0.15), lineWidth: 14)
+                .stroke(Color.gray.opacity(0.10), lineWidth: 16)
 
             Circle()
                 .trim(from: 0, to: CGFloat(viewModel.progress))
                 .stroke(
-                    ringColor,
-                    style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                    AngularGradient(
+                        colors: [ringColor.opacity(0.55), ringColor, ringColor.opacity(0.75)],
+                        center: .center
+                    ),
+                    style: StrokeStyle(lineWidth: 16, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
                 .animation(.linear(duration: 0.25), value: viewModel.progress)
                 .animation(.easeInOut(duration: 0.4), value: ringColor)
 
-            VStack(spacing: 8) {
-                Image(systemName: centerIcon)
-                    .font(.title2)
-                    .foregroundColor(ringColor)
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(ringColor.opacity(0.12))
+                        .frame(width: 54, height: 54)
+
+                    Image(systemName: centerIcon)
+                        .font(.title2)
+                        .foregroundColor(ringColor)
+                }
 
                 Text(viewModel.formattedTime)
                     .font(.system(size: 56, weight: .bold, design: .rounded))
                     .monospacedDigit()
+                    .foregroundStyle(Theme.Colors.textPrimary)
 
                 Text(viewModel.phaseLabel)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(Theme.Colors.textSecondary)
 
-                Text("Focus \(viewModel.focusMinutes) min - Break \(viewModel.breakMinutes) min")
+                Text("Focus \(viewModel.focusMinutes)m  |  Break \(viewModel.breakMinutes)m")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.Colors.textSecondary)
             }
         }
-        .frame(width: 260, height: 260)
+        .frame(height: 350)
+        .appCard(fill: Theme.Colors.surfaceStrong, padding: 24)
     }
-
-    // MARK: - Mode Picker
 
     private var modePicker: some View {
         HStack(spacing: 10) {
@@ -129,35 +167,34 @@ struct FocusTimerView: View {
                 Button {
                     viewModel.selectMode(mode)
                 } label: {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 7) {
                         Image(systemName: mode.iconName)
                             .font(.title3)
                         Text(mode.displayName)
-                            .font(.caption)
-                            .fontWeight(.medium)
+                            .font(.caption.weight(.semibold))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 14)
                     .background(
-                        viewModel.selectedMode == mode
-                            ? color(for: mode).opacity(0.2)
-                            : Color.gray.opacity(0.08)
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(
+                                viewModel.selectedMode == mode
+                                    ? color(for: mode).opacity(0.14)
+                                    : Color.white.opacity(0.7)
+                            )
                     )
-                    .foregroundColor(
-                        viewModel.selectedMode == mode
-                            ? color(for: mode)
-                            : .primary
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(viewModel.selectedMode == mode ? color(for: mode).opacity(0.35) : Theme.Colors.stroke, lineWidth: 1)
                     )
-                    .cornerRadius(12)
+                    .foregroundColor(viewModel.selectedMode == mode ? color(for: mode) : Theme.Colors.textPrimary)
                 }
                 .buttonStyle(.plain)
                 .disabled(viewModel.isRunning)
-                .opacity(viewModel.isRunning && viewModel.selectedMode != mode ? 0.4 : 1)
+                .opacity(viewModel.isRunning && viewModel.selectedMode != mode ? 0.45 : 1)
             }
         }
     }
-
-    // MARK: - Control Buttons
 
     private var controlButtons: some View {
         HStack(spacing: 12) {
@@ -174,10 +211,10 @@ struct FocusTimerView: View {
                 }
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(ringColor)
+                .padding(.vertical, 16)
+                .background(Theme.Gradients.accent)
                 .foregroundColor(.white)
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
 
             Button {
@@ -189,18 +226,20 @@ struct FocusTimerView: View {
                 }
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.gray.opacity(0.15))
-                .foregroundColor(.primary)
-                .cornerRadius(12)
+                .padding(.vertical, 16)
+                .background(Color.white.opacity(0.8))
+                .foregroundColor(Theme.Colors.textPrimary)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Theme.Colors.stroke, lineWidth: 1)
+                )
             }
         }
     }
 
-    // MARK: - Pomodoro Section
-
     private var pomodoroSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             Toggle(isOn: Binding(
                 get: { viewModel.pomodoroEnabled },
                 set: { viewModel.setPomodoroEnabled($0) }
@@ -212,41 +251,41 @@ struct FocusTimerView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Pomodoro Cycle")
                             .fontWeight(.medium)
+                            .foregroundColor(Theme.Colors.textPrimary)
                         Text("Custom focus and break durations")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.Colors.textSecondary)
                     }
                 }
             }
             .tint(.red)
             .disabled(viewModel.isRunning)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Color.gray.opacity(0.08))
-            .cornerRadius(12)
 
             if viewModel.pomodoroEnabled {
                 HStack(spacing: 10) {
                     ForEach(1...FocusViewModel.totalPomodoroCycles, id: \.self) { i in
                         Circle()
-                            .fill(i <= viewModel.completedWorkCount ? Color.green : Color.gray.opacity(0.2))
-                            .frame(width: 12, height: 12)
+                            .fill(i <= viewModel.completedWorkCount ? Theme.Colors.success : Color.gray.opacity(0.18))
+                            .frame(width: 14, height: 14)
                             .overlay(
                                 Circle()
-                                    .stroke(Color.green.opacity(0.4), lineWidth: i == viewModel.completedWorkCount + 1 && viewModel.pomodoroPhase == .work ? 2 : 0)
+                                    .stroke(Theme.Colors.success.opacity(0.45), lineWidth: i == viewModel.completedWorkCount + 1 && viewModel.pomodoroPhase == .work ? 2 : 0)
                             )
                             .animation(.easeInOut, value: viewModel.completedWorkCount)
                     }
                 }
+
+                Text(viewModel.phaseIsBreak ? "Enjoy the break, then jump back in." : "Each completed work block moves you closer to a full cycle.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.Colors.textSecondary)
             }
         }
+        .appCard(fill: Theme.Colors.surfaceStrong)
     }
-
-    // MARK: - Colors & Icons
 
     private var ringColor: Color {
         if viewModel.phaseIsBreak {
-            return .green
+            return Theme.Colors.success
         }
         return color(for: viewModel.selectedMode)
     }
@@ -260,9 +299,9 @@ struct FocusTimerView: View {
 
     private func color(for mode: FocusMode) -> Color {
         switch mode {
-        case .deepWork: return .purple
-        case .learning: return .blue
-        case .creating: return .orange
+        case .deepWork: return Color(red: 0.42, green: 0.37, blue: 0.86)
+        case .learning: return Theme.Colors.accentSecondary
+        case .creating: return Theme.Colors.accentWarm
         }
     }
 }

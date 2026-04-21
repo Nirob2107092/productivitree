@@ -26,27 +26,30 @@ struct StatCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: iconName)
-                .font(.title3)
-                .foregroundColor(tint)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(tint.opacity(0.14))
+                        .frame(width: 42, height: 42)
+
+                    Image(systemName: iconName)
+                        .font(.headline.weight(.semibold))
+                        .foregroundColor(tint)
+                }
+
+                Spacer()
+            }
 
             Text(value)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
+                .font(.title2.weight(.bold))
+                .foregroundColor(Theme.Colors.textPrimary)
 
             Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.subheadline)
+                .foregroundColor(Theme.Colors.textSecondary)
         }
-        .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.Colors.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Theme.Colors.stroke, lineWidth: 1)
-        )
-        .cornerRadius(14)
+        .appCard(fill: Theme.Colors.surfaceStrong)
     }
 }

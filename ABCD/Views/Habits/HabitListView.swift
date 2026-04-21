@@ -22,13 +22,41 @@ struct HabitListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Build momentum daily")
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(Theme.Colors.textPrimary)
+
+                            Text("\(habitService.habits.count) active habits in rotation")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.Colors.textSecondary)
+                        }
+
+                        Spacer()
+
+                        ZStack {
+                            Circle()
+                                .fill(Theme.Colors.warning.opacity(0.14))
+                                .frame(width: 46, height: 46)
+
+                            Image(systemName: "flame.fill")
+                                .font(.headline)
+                                .foregroundStyle(Theme.Colors.warning)
+                        }
+                    }
+                }
+                .appCard(fill: Theme.Colors.surfaceStrong)
+
                 if habitService.habits.isEmpty {
                     EmptyStateView(
                         icon: "flame",
                         title: "No Habits Yet",
                         message: "Tap + to create your first habit and start building streaks!"
                     )
+                    .frame(maxHeight: .infinity)
                 } else {
                     List {
                         ForEach(habitService.habits) { habit in
@@ -39,6 +67,9 @@ struct HabitListView: View {
                                     habitImagePreviewItem = RemoteImagePreviewItem(title: habit.title, urlString: urlString)
                                 }
                             }
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 7, leading: 0, bottom: 7, trailing: 0))
+                            .listRowBackground(Color.clear)
                         }
                         .onDelete { indexSet in
                             indexSet.forEach { i in
@@ -47,9 +78,14 @@ struct HabitListView: View {
                         }
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
+            .padding(.horizontal)
+            .padding(.top, 14)
+            .background(Theme.Gradients.appBackground.ignoresSafeArea())
             .navigationTitle("Habits")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -57,6 +93,7 @@ struct HabitListView: View {
                     } label: {
                         Label("Add Habit", systemImage: "plus")
                             .labelStyle(.iconOnly)
+                            .foregroundStyle(Theme.Colors.warning)
                     }
                 }
             }
@@ -109,13 +146,18 @@ struct HabitRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
-                // Toggle circle
                 Button {
                     viewModel.toggleHabit(habit)
                 } label: {
-                    Image(systemName: completedToday ? "checkmark.circle.fill" : "circle")
-                        .font(.title2)
-                        .foregroundColor(completedToday ? .orange : .gray)
+                    ZStack {
+                        Circle()
+                            .fill((completedToday ? Theme.Colors.warning : Theme.Colors.surfaceAlt).opacity(0.20))
+                            .frame(width: 38, height: 38)
+
+                        Image(systemName: completedToday ? "checkmark.circle.fill" : "circle")
+                            .font(.title3)
+                            .foregroundColor(completedToday ? Theme.Colors.warning : Theme.Colors.textSecondary)
+                    }
                 }
                 .buttonStyle(.plain)
 
@@ -130,27 +172,26 @@ struct HabitRowView: View {
                     .buttonStyle(.plain)
                 }
 
-                // Habit title
                 Text(habit.title)
                     .fontWeight(.medium)
-                    .foregroundColor(.primary)
+                    .foregroundColor(Theme.Colors.textPrimary)
 
                 Spacer()
 
-                // Streak badge
                 HStack(spacing: 4) {
-                    Text("🔥")
-                        .font(.subheadline)
+                    Image(systemName: "flame.fill")
+                        .font(.caption)
+                        .foregroundStyle(Theme.Colors.warning)
                     Text("\(habit.currentStreak)")
                         .fontWeight(.bold)
-                        .foregroundColor(.orange)
+                        .foregroundColor(Theme.Colors.warning)
                     Text("days")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.Colors.textSecondary)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Color.orange.opacity(0.1))
+                .background(Theme.Colors.warning.opacity(0.12))
                 .cornerRadius(10)
 
                 Button {
@@ -159,7 +200,7 @@ struct HabitRowView: View {
                     }
                 } label: {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.Colors.textSecondary)
                         .font(.caption)
                         .padding(.leading, 4)
                 }
@@ -171,11 +212,10 @@ struct HabitRowView: View {
                     .padding(.leading, 36)
             }
 
-            // Best streak footnote
             if habit.bestStreak > 0 {
                 Text("Best: \(habit.bestStreak) days")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.Colors.textSecondary)
                     .padding(.leading, 36)
             }
 
@@ -187,13 +227,15 @@ struct HabitRowView: View {
                 } label: {
                     Label("Photo attached today", systemImage: "photo")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.Colors.textSecondary)
                 }
                 .buttonStyle(.plain)
                 .padding(.leading, 36)
             }
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .appCard(fill: Theme.Colors.surfaceStrong, padding: 0)
     }
 
     private var currentUTCDateKey: String {

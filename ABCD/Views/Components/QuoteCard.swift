@@ -10,33 +10,40 @@ struct QuoteCard: View {
     let onRefresh: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Label("Daily Motivation", systemImage: "quote.bubble")
                     .font(.headline)
+                    .foregroundStyle(Theme.Colors.textPrimary)
                 Spacer()
                 Button(action: onRefresh) {
                     Image(systemName: "arrow.clockwise")
+                        .font(.headline)
+                        .padding(10)
+                        .background(Theme.Colors.accent.opacity(0.12))
+                        .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(Theme.Colors.accent)
             }
 
             Text("\"\(quote.content)\"")
-                .font(.body)
-                .foregroundColor(.primary)
+                .font(.body.weight(.medium))
+                .foregroundColor(Theme.Colors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text("- \(quote.author)")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.Colors.textSecondary)
         }
-        .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.Colors.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Theme.Colors.stroke, lineWidth: 1)
-        )
-        .cornerRadius(14)
+        .appCard(fill: LinearGradient(
+            colors: [
+                Color.white.opacity(0.96),
+                Color(red: 0.95, green: 0.97, blue: 0.92)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        ))
     }
 }

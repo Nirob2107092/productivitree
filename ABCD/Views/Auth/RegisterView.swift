@@ -19,22 +19,27 @@ struct RegisterView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            // Header
             VStack(spacing: 8) {
-                Image(systemName: "person.badge.plus")
-                    .font(.system(size: 50))
-                    .foregroundColor(.green)
+                ZStack {
+                    Circle()
+                        .fill(Theme.Colors.accent.opacity(0.12))
+                        .frame(width: 92, height: 92)
+
+                    Image(systemName: "person.badge.plus")
+                        .font(.system(size: 38))
+                        .foregroundColor(Theme.Colors.accent)
+                }
 
                 Text("Create Account")
                     .font(.largeTitle)
                     .fontWeight(.bold)
+                    .foregroundStyle(Theme.Colors.textPrimary)
 
                 Text("Join Productivitree today")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.Colors.textSecondary)
             }
 
-            // Input fields
             VStack(spacing: 16) {
                 TextField("Display Name", text: $displayName)
                     .textFieldStyle(.roundedBorder)
@@ -58,8 +63,9 @@ struct RegisterView: View {
                     .textContentType(.newPassword)
             }
             .padding(.horizontal)
+            .padding(.vertical, 20)
+            .appCard(fill: Theme.Colors.surfaceStrong)
 
-            // Error message
             if let error = authService.errorMessage {
                 Text(error)
                     .font(.caption)
@@ -68,7 +74,6 @@ struct RegisterView: View {
                     .padding(.horizontal)
             }
 
-            // Register button
             Button {
                 register()
             } label: {
@@ -76,24 +81,25 @@ struct RegisterView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.green)
+                    .background(Theme.Gradients.accent)
                     .foregroundColor(.white)
-                    .cornerRadius(12)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
             .padding(.horizontal)
             .disabled(isLoading)
 
-            // Back to Login
             Button {
                 dismiss()
             } label: {
                 Text("Already have an account? Log In")
                     .font(.subheadline)
-                    .foregroundColor(.green)
+                    .foregroundColor(Theme.Colors.accent)
             }
 
             Spacer()
         }
+        .padding(.horizontal)
+        .background(Theme.Gradients.appBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -101,7 +107,7 @@ struct RegisterView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.Colors.accent)
                 }
             }
         }

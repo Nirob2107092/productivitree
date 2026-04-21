@@ -29,19 +29,47 @@ struct AnalyticsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                headerCard
                 focusSection
                 tasksSection
                 xpSection
             }
             .padding()
         }
+        .background(Theme.Gradients.appBackground.ignoresSafeArea())
         .navigationTitle("Analytics")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var headerCard: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Weekly Progress")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+
+                Text("Review how your focus, tasks, and XP moved over the last seven days.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.title2)
+                .foregroundStyle(Theme.Colors.accentSecondary)
+                .padding(14)
+                .background(Theme.Colors.accentSecondary.opacity(0.12))
+                .clipShape(Circle())
+        }
+        .appCard(fill: Theme.Colors.surfaceStrong)
     }
 
     private var focusSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Weekly Focus Minutes")
                 .font(.headline)
+                .foregroundStyle(Theme.Colors.textPrimary)
             if weeklyFocusData.allSatisfy({ $0.value == 0 }) {
                 EmptyStateView(message: "Complete focus sessions to see stats")
                     .frame(height: 120)
@@ -70,12 +98,14 @@ struct AnalyticsView: View {
                 .frame(height: 200)
             }
         }
+        .appCard(fill: Theme.Colors.surfaceStrong)
     }
 
     private var tasksSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Tasks Completed Per Day")
                 .font(.headline)
+                .foregroundStyle(Theme.Colors.textPrimary)
             Chart(weeklyTaskData, id: \.label) { item in
                 BarMark(
                     x: .value("Day", item.label),
@@ -99,12 +129,14 @@ struct AnalyticsView: View {
             }
             .frame(height: 200)
         }
+        .appCard(fill: Theme.Colors.surfaceStrong)
     }
 
     private var xpSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("XP Growth")
                 .font(.headline)
+                .foregroundStyle(Theme.Colors.textPrimary)
             Chart(xpGrowthData, id: \.label) { item in
                 LineMark(
                     x: .value("Day", item.label),
@@ -142,6 +174,7 @@ struct AnalyticsView: View {
             }
             .frame(height: 200)
         }
+        .appCard(fill: Theme.Colors.surfaceStrong)
     }
 
     private var weeklyFocusData: [(label: String, value: Int)] {

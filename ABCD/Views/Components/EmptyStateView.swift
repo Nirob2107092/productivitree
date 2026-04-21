@@ -23,21 +23,28 @@ struct EmptyStateView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundColor(.gray.opacity(0.5))
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Theme.Colors.accent.opacity(0.10))
+                    .frame(width: 84, height: 84)
+
+                Image(systemName: icon)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundColor(Theme.Colors.accent)
+            }
 
             Text(title)
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.Colors.textPrimary)
 
             Text(message)
                 .font(.subheadline)
-                .foregroundColor(.secondary.opacity(0.8))
+                .foregroundColor(Theme.Colors.textSecondary)
                 .multilineTextAlignment(.center)
         }
-        .padding()
+        .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .appCard(fill: Theme.Colors.surfaceStrong, padding: 24)
     }
 }

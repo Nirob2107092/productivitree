@@ -16,8 +16,8 @@ struct ProfileView: View {
     @State private var displayedEnvironment: EnvironmentType = .normal
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(), spacing: 14),
+        GridItem(.flexible(), spacing: 14)
     ]
 
     init() {
@@ -27,24 +27,29 @@ struct ProfileView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 18) {
                 header
                 treeWorldSection
                 xpSection
+
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .font(.caption)
                         .foregroundColor(.red)
+                        .padding(.horizontal, 4)
                 }
+
                 statsSection
                 quoteSection
                 logoutButton
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.vertical, 18)
         }
-        .background(Theme.Colors.background.ignoresSafeArea())
+        .background(Theme.Gradients.appBackground.ignoresSafeArea())
         .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.large)
         .onAppear {
             if let userId = authService.currentUser?.uid {
                 viewModel.load(userId: userId)
@@ -75,105 +80,164 @@ struct ProfileView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 14) {
+        ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(Theme.Gradients.hero)
+
             Circle()
-                .fill(Theme.Colors.accent.opacity(0.2))
-                .frame(width: 64, height: 64)
-                .overlay(
-                    Text(initials)
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.Colors.accent)
-                )
+                .fill(Color.white.opacity(0.10))
+                .frame(width: 170, height: 170)
+                .offset(x: 110, y: -60)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(authService.userModel?.displayName ?? "Guest")
-                    .font(.title3)
-                    .fontWeight(.semibold)
+            Circle()
+                .fill(Color.white.opacity(0.08))
+                .frame(width: 120, height: 120)
+                .offset(x: -90, y: 80)
 
-                Text("Level \(authService.userModel?.level ?? 0)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.18))
+                            .frame(width: 72, height: 72)
+
+                        Text(initials)
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(.white)
+                    }
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(authService.userModel?.displayName ?? "Guest")
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(.white)
+
+                        Text(authService.userModel?.email ?? "No email available")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.white.opacity(0.84))
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+                }
+
+                HStack(spacing: 10) {
+                    Label("Level \(authService.userModel?.level ?? 0)", systemImage: "sparkles")
+                        .appChip(tint: .white)
+                        .foregroundStyle(Color.white)
+                        .background(Color.white.opacity(0.14), in: Capsule())
+
+                    Label("\(authService.userModel?.xp ?? 0) XP", systemImage: "bolt.fill")
+                        .appChip(tint: .white)
+                        .foregroundStyle(Color.white)
+                        .background(Color.white.opacity(0.14), in: Capsule())
+                }
             }
-
-            Spacer()
+            .padding(22)
         }
-        .padding()
-        .background(Theme.Colors.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Theme.Colors.stroke, lineWidth: 1)
-        )
-        .cornerRadius(14)
+        .frame(height: 200)
+        .shadow(color: Theme.Colors.accent.opacity(0.22), radius: 24, x: 0, y: 16)
     }
 
     private var treeWorldSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Tree World")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Tree World")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Theme.Colors.textPrimary)
+
+                    Text("Your progress is reflected as a living world with growth and atmosphere.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                }
+
+                Spacer()
+            }
 
             TreeView(stage: displayedTreeStage, environment: displayedEnvironment)
                 .animation(.easeInOut(duration: 0.5), value: displayedTreeStage)
                 .animation(.easeInOut(duration: 0.5), value: displayedEnvironment)
+
+            HStack(spacing: 10) {
+                Label(displayedTreeStage.rawValue.capitalized, systemImage: "tree.fill")
+                    .appChip(tint: Theme.Colors.accent)
+
+                Label(displayedEnvironment.rawValue.capitalized, systemImage: environmentSystemImage)
+                    .appChip(tint: Theme.Colors.accentSecondary)
+            }
         }
-        .padding()
-        .background(Theme.Colors.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Theme.Colors.stroke, lineWidth: 1)
-        )
-        .cornerRadius(14)
+        .appCard(fill: Theme.Colors.surfaceStrong, padding: 20)
     }
 
     private var xpSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Total XP: \(authService.userModel?.xp ?? 0)")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Growth Progress")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Theme.Colors.textPrimary)
+
+                    Text("Complete tasks, habits, and focus sessions to keep your world evolving.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                }
+
+                Spacer()
+
+                Text("\(authService.userModel?.xp ?? 0) XP")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Theme.Colors.accent)
+            }
+
             XPProgressBar(
                 xp: authService.userModel?.xp ?? 0,
                 xpPerLevel: Constants.XP.xpPerLevel
             )
         }
-        .padding()
-        .background(Theme.Colors.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Theme.Colors.stroke, lineWidth: 1)
-        )
-        .cornerRadius(14)
+        .appCard(fill: LinearGradient(
+            colors: [Color.white.opacity(0.94), Color(red: 0.92, green: 0.96, blue: 0.91)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        ))
     }
 
     private var statsSection: some View {
-        LazyVGrid(columns: columns, spacing: 12) {
-            StatCard(
-                title: "Tasks Completed",
-                value: "\(viewModel.userStats.tasksCompleted)",
-                iconName: "checkmark.circle.fill",
-                tint: Theme.Colors.accent
-            )
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Highlights")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Theme.Colors.textPrimary)
 
-            StatCard(
-                title: "Focus Time",
-                value: viewModel.formattedFocusTime(),
-                iconName: "timer",
-                tint: Theme.Colors.accentSecondary
-            )
+            LazyVGrid(columns: columns, spacing: 14) {
+                StatCard(
+                    title: "Tasks Completed",
+                    value: "\(viewModel.userStats.tasksCompleted)",
+                    iconName: "checkmark.circle.fill",
+                    tint: Theme.Colors.accent
+                )
 
-            StatCard(
-                title: "Best Streak",
-                value: "\(viewModel.userStats.bestHabitStreak) days",
-                iconName: "flame.fill",
-                tint: Theme.Colors.warning
-            )
+                StatCard(
+                    title: "Focus Time",
+                    value: viewModel.formattedFocusTime(),
+                    iconName: "timer",
+                    tint: Theme.Colors.accentSecondary
+                )
 
-            NavigationLink(destination: AnalyticsView(
-                focusSessions: viewModel.focusSessions,
-                completedTasks: viewModel.completedTasks,
-                habits: habitViewModel.habitService.habits
-            )) {
-                StatCard(icon: "chart.bar.fill", title: "Analytics", value: "View →", color: .purple)
+                StatCard(
+                    title: "Best Streak",
+                    value: "\(viewModel.userStats.bestHabitStreak) days",
+                    iconName: "flame.fill",
+                    tint: Theme.Colors.warning
+                )
+
+                NavigationLink(destination: AnalyticsView(
+                    focusSessions: viewModel.focusSessions,
+                    completedTasks: viewModel.completedTasks,
+                    habits: habitViewModel.habitService.habits
+                )) {
+                    StatCard(icon: "chart.bar.fill", title: "Analytics", value: "View Details", color: Theme.Colors.accentWarm)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -184,26 +248,20 @@ struct ProfileView: View {
                 viewModel.refreshQuote()
             }
         } else if viewModel.isLoading {
-            HStack {
+            HStack(spacing: 12) {
                 ProgressView()
                 Text("Loading quote...")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.Colors.textSecondary)
             }
-            .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.Colors.surface)
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Theme.Colors.stroke, lineWidth: 1)
-            )
-            .cornerRadius(14)
+            .appCard(fill: Theme.Colors.surfaceStrong)
         } else {
             EmptyStateView(
                 icon: "quote.bubble",
                 title: "No Quote Available",
                 message: "Pull to refresh or check your connection."
             )
-            .frame(height: 150)
+            .frame(height: 180)
         }
     }
 
@@ -214,10 +272,10 @@ struct ProfileView: View {
             Text("Log Out")
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.red.opacity(0.12))
+                .padding(.vertical, 16)
+                .background(Color.red.opacity(0.10))
                 .foregroundColor(.red)
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
 
@@ -232,6 +290,19 @@ struct ProfileView: View {
         let second = parts.dropFirst().first?.first.map(String.init) ?? ""
         let value = (first + second).uppercased()
         return value.isEmpty ? "U" : value
+    }
+
+    private var environmentSystemImage: String {
+        switch displayedEnvironment {
+        case .normal:
+            return "cloud.sun.fill"
+        case .sunny:
+            return "sun.max.fill"
+        case .rainy:
+            return "cloud.rain.fill"
+        case .night:
+            return "moon.stars.fill"
+        }
     }
 
     private func reloadProfileData() {

@@ -23,23 +23,48 @@ struct TaskListView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Filter picker
-                Picker("Filter", selection: $viewModel.selectedFilter) {
-                    ForEach(TaskFilter.allCases, id: \.self) { filter in
-                        Text(filter.rawValue).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding()
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Stay on top of your day")
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(Theme.Colors.textPrimary)
 
-                // Task list or empty state
+                            Text("\(viewModel.filteredTasks.count) tasks in \(viewModel.selectedFilter.rawValue.lowercased())")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.Colors.textSecondary)
+                        }
+
+                        Spacer()
+
+                        ZStack {
+                            Circle()
+                                .fill(Theme.Colors.accent.opacity(0.12))
+                                .frame(width: 46, height: 46)
+
+                            Image(systemName: "checklist.checked")
+                                .font(.headline)
+                                .foregroundStyle(Theme.Colors.accent)
+                        }
+                    }
+
+                    Picker("Filter", selection: $viewModel.selectedFilter) {
+                        ForEach(TaskFilter.allCases, id: \.self) { filter in
+                            Text(filter.rawValue).tag(filter)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .appCard(fill: Theme.Colors.surfaceStrong)
+
                 if viewModel.filteredTasks.isEmpty {
                     EmptyStateView(
                         icon: emptyStateIcon,
                         title: emptyStateTitle,
                         message: emptyStateMessage
                     )
+                    .frame(maxHeight: .infinity)
                 } else {
                     List {
                         ForEach(viewModel.filteredTasks) { task in
@@ -51,36 +76,44 @@ struct TaskListView: View {
                                     )
                                 }
                             }
-                                .swipeActions(edge: .leading) {
-                                    if !task.isCompleted && !viewModel.isOverdue(task) {
-                                        Button {
-                                            viewModel.completeTask(task)
-                                        } label: {
-                                            Label("Complete", systemImage: "checkmark.circle.fill")
-                                        }
-                                        .tint(.green)
-
-                                        Button {
-                                            taskForPhotoCompletion = task
-                                        } label: {
-                                            Label("Photo", systemImage: "photo.badge.checkmark")
-                                        }
-                                        .tint(.blue)
-                                    }
-                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        viewModel.deleteTask(task)
+                            .swipeActions(edge: .leading) {
+                                if !task.isCompleted && !viewModel.isOverdue(task) {
+                                    Button {
+                                        viewModel.completeTask(task)
                                     } label: {
-                                        Label("Delete", systemImage: "trash.fill")
+                                        Label("Complete", systemImage: "checkmark.circle.fill")
                                     }
+                                    .tint(.green)
+
+                                    Button {
+                                        taskForPhotoCompletion = task
+                                    } label: {
+                                        Label("Photo", systemImage: "photo.badge.checkmark")
+                                    }
+                                    .tint(.blue)
                                 }
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    viewModel.deleteTask(task)
+                                } label: {
+                                    Label("Delete", systemImage: "trash.fill")
+                                }
+                            }
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 7, leading: 0, bottom: 7, trailing: 0))
+                            .listRowBackground(Color.clear)
                         }
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
+            .padding(.horizontal)
+            .padding(.top, 14)
+            .background(Theme.Gradients.appBackground.ignoresSafeArea())
             .navigationTitle("Tasks")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -88,7 +121,7 @@ struct TaskListView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title3)
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.Colors.accent)
                     }
                 }
             }
@@ -172,29 +205,33 @@ struct TaskRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Completion indicator
-            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                .foregroundColor(task.isCompleted ? .green : .gray)
-                .font(.title3)
+            ZStack {
+                Circle()
+                    .fill((task.isCompleted ? Theme.Colors.success : Theme.Colors.surfaceAlt).opacity(0.20))
+                    .frame(width: 38, height: 38)
 
-            // Task info
+                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(task.isCompleted ? Theme.Colors.success : Theme.Colors.textSecondary)
+                    .font(.title3)
+            }
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
                     .fontWeight(.medium)
                     .strikethrough(task.isCompleted, color: .gray)
-                    .foregroundColor(task.isCompleted ? .secondary : .primary)
+                    .foregroundColor(task.isCompleted ? Theme.Colors.textSecondary : Theme.Colors.textPrimary)
 
                 if !task.description.isEmpty {
                     Text(task.description)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.Colors.textSecondary)
                         .lineLimit(1)
                 }
 
                 if let deadline = task.deadline {
                     Text(deadlineText(deadline))
                         .font(.caption2)
-                        .foregroundColor(isOverdue ? .red : .secondary)
+                        .foregroundColor(isOverdue ? .red : Theme.Colors.textSecondary)
                 }
 
                 if task.isCompleted, task.completionImageURL != nil {
@@ -203,7 +240,7 @@ struct TaskRowView: View {
                     } label: {
                         Label("Photo attached", systemImage: "photo")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.Colors.textSecondary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -233,7 +270,9 @@ struct TaskRowView: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .appCard(fill: Theme.Colors.surfaceStrong, padding: 0)
     }
 
     private var isOverdue: Bool {

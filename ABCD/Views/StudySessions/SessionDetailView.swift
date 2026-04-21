@@ -231,29 +231,28 @@ struct SessionDetailView: View {
                         .cornerRadius(12)
                 }
             } else {
-                Button {
-                    if session.isActive {
-                        if viewModel.isActiveParticipant(session, userId: userId) {
-                            viewModel.leaveActiveSession(session, userId: userId)
-                        } else {
-                            viewModel.joinActiveSession(session, userId: userId)
-                        }
-                    } else if isParticipant {
-                        viewModel.leaveSession(session, userId: userId)
-                    } else {
-                        viewModel.joinSession(session, userId: userId)
-                    }
-                } label: {
-                    Text(buttonTitle(session: session, isParticipant: isParticipant, userId: userId))
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(buttonBackground(session: session, isParticipant: isParticipant, userId: userId))
-                        .foregroundColor(buttonForeground(session: session, isParticipant: isParticipant, userId: userId))
-                        .cornerRadius(12)
-                }
-                .disabled(userId.isEmpty)
+    // Non-creator controls:
+    // - While active: controls are shown inside FocusTogetherView (avoid duplicate Leave Focus button here).
+    // - While inactive: show Join/Leave Session.
+    if !session.isActive {
+        Button {
+            if isParticipant {
+                viewModel.leaveSession(session, userId: userId)
+            } else {
+                viewModel.joinSession(session, userId: userId)
             }
+        } label: {
+            Text(isParticipant ? "Leave Session" : "Join Session")
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(isParticipant ? Color.gray.opacity(0.15) : Color.green)
+                .foregroundColor(isParticipant ? .primary : .white)
+                .cornerRadius(12)
+        }
+        .disabled(userId.isEmpty)
+    }
+}
         }
     }
 
