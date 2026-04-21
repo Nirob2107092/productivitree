@@ -139,19 +139,19 @@ High-level flow:
 
 ## High-Level System Architecture Diagram
 
-![Architecture Diagram](ABCD\ABCD\docs\architecture_diagram.png)
+![Architecture Diagram](ABCD/docs/architecture_diagram.png)
 
 ## UML Class Diagram
 
-![UML Diagram](ABCD\ABCD\docs\uml_class.png)
+![UML Diagram](ABCD/docs/uml_class.png)
 
 ## DFD Level 0 Context Diagram
 
-![DFD Level 0](ABCD\ABCD\docs\dfd0.png)
+![DFD Level 0](ABCD/docs/dfd0.png)
 
 ## DFD Level 1
 
-![DFD Level 1](ABCD\ABCD\docs\dfd1.png)
+![DFD Level 1](ABCD/docs/dfd1.png)
 
 ## Project Structure
 
