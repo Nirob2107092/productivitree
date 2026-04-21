@@ -44,9 +44,11 @@ class FocusViewModel: ObservableObject {
 
     init(focusService: FocusService) {
         self.focusService = focusService
-        self.focusMinutes = 25
-        self.breakMinutes = 5
-        let defaultSeconds = focusMinutes * 60
+        let initialFocusMinutes = 25
+        let initialBreakMinutes = 5
+        let defaultSeconds = initialFocusMinutes * 60
+        self.focusMinutes = initialFocusMinutes
+        self.breakMinutes = initialBreakMinutes
         self.totalSeconds = defaultSeconds
         self.timeRemaining = defaultSeconds
     }
