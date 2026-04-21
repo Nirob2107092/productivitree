@@ -30,7 +30,7 @@ struct TaskListView: View {
                 .padding()
 
                 // Task list or empty state
-                if taskSectionsAreEmpty {
+                if viewModel.filteredTasks.isEmpty {
                     EmptyStateView(
                         icon: emptyStateIcon,
                         title: emptyStateTitle,
@@ -38,59 +38,25 @@ struct TaskListView: View {
                     )
                 } else {
                     List {
-                        if viewModel.selectedFilter == .completed {
-                            if !viewModel.completedTasks.isEmpty {
-                                Section("Completed") {
-                                    ForEach(viewModel.completedTasks) { task in
-                                        TaskRowView(task: task)
-                                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                                Button(role: .destructive) {
-                                                    viewModel.deleteTask(task)
-                                                } label: {
-                                                    Label("Delete", systemImage: "trash.fill")
-                                                }
-                                            }
+                        ForEach(viewModel.filteredTasks) { task in
+                            TaskRowView(task: task)
+                                .swipeActions(edge: .leading) {
+                                    if !task.isCompleted && !viewModel.isOverdue(task) {
+                                        Button {
+                                            viewModel.completeTask(task)
+                                        } label: {
+                                            Label("Complete", systemImage: "checkmark.circle.fill")
+                                        }
+                                        .tint(.green)
                                     }
                                 }
-                            }
-                        } else {
-                            if !viewModel.activeTasks.isEmpty {
-                                Section("Active") {
-                                    ForEach(viewModel.activeTasks) { task in
-                                        TaskRowView(task: task)
-                                            .swipeActions(edge: .leading) {
-                                                Button {
-                                                    viewModel.completeTask(task)
-                                                } label: {
-                                                    Label("Complete", systemImage: "checkmark.circle.fill")
-                                                }
-                                                .tint(.green)
-                                            }
-                                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                                Button(role: .destructive) {
-                                                    viewModel.deleteTask(task)
-                                                } label: {
-                                                    Label("Delete", systemImage: "trash.fill")
-                                                }
-                                            }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteTask(task)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash.fill")
                                     }
                                 }
-                            }
-
-                            if !viewModel.unfinishedTasks.isEmpty {
-                                Section("Unfinished") {
-                                    ForEach(viewModel.unfinishedTasks) { task in
-                                        TaskRowView(task: task)
-                                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                                Button(role: .destructive) {
-                                                    viewModel.deleteTask(task)
-                                                } label: {
-                                                    Label("Delete", systemImage: "trash.fill")
-                                                }
-                                            }
-                                    }
-                                }
-                            }
                         }
                     }
                     .listStyle(.plain)
@@ -132,6 +98,7 @@ struct TaskListView: View {
         case .today: return "calendar"
         case .completed: return "trophy"
         case .highPriority: return "exclamationmark.triangle"
+        case .unfinished: return "clock.badge.exclamationmark"
         }
     }
 
@@ -141,6 +108,7 @@ struct TaskListView: View {
         case .today: return "No Tasks Today"
         case .completed: return "No Completed Tasks"
         case .highPriority: return "No High Priority Tasks"
+        case .unfinished: return "No Unfinished Tasks"
         }
     }
 
@@ -150,14 +118,8 @@ struct TaskListView: View {
         case .today: return "You're all caught up for today."
         case .completed: return "Complete tasks to see them here."
         case .highPriority: return "No urgent tasks right now."
+        case .unfinished: return "Tasks that miss their deadline will appear here."
         }
-    }
-
-    private var taskSectionsAreEmpty: Bool {
-        if viewModel.selectedFilter == .completed {
-            return viewModel.completedTasks.isEmpty
-        }
-        return viewModel.activeTasks.isEmpty && viewModel.unfinishedTasks.isEmpty
     }
 
     private var taskErrorBinding: Binding<Bool> {

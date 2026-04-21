@@ -9,6 +9,8 @@ import FirebaseFirestore
 
 class StudySessionViewModel: ObservableObject {
     @Published var showCreateSession = false
+    @Published private(set) var sessions: [StudySession] = []
+    @Published private(set) var errorMessage: String?
     @Published var currentSession: StudySession?
     @Published var timeRemaining: Int = 0
     @Published var groupProgress: Double = 0
@@ -18,24 +20,31 @@ class StudySessionViewModel: ObservableObject {
 
     private var sessionListener: ListenerRegistration?
     private var timerCancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
     private var endRequested = false
     private var observerUserId: String?
 
     init(studySessionService: StudySessionService) {
         self.studySessionService = studySessionService
+
+        studySessionService.$sessions
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] sessions in
+                self?.sessions = sessions
+            }
+            .store(in: &cancellables)
+
+        studySessionService.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                self?.errorMessage = errorMessage
+            }
+            .store(in: &cancellables)
     }
 
     deinit {
         sessionListener?.remove()
         timerCancellable?.cancel()
-    }
-
-    var sessions: [StudySession] {
-        studySessionService.sessions
-    }
-
-    var errorMessage: String? {
-        studySessionService.errorMessage
     }
 
     func startListening() {

@@ -11,6 +11,7 @@ enum TaskFilter: String, CaseIterable {
     case today = "Today"
     case completed = "Completed"
     case highPriority = "High"
+    case unfinished = "Unfinished"
 }
 
 class TaskViewModel: ObservableObject {
@@ -27,17 +28,23 @@ class TaskViewModel: ObservableObject {
 
     // MARK: - Filtered Tasks
 
-    var activeTasks: [TaskModel] {
-        filteredIncompleteTasks.filter { !isOverdue($0) }
-    }
-
-    var unfinishedTasks: [TaskModel] {
-        filteredIncompleteTasks.filter { isOverdue($0) }
-    }
-
-    var completedTasks: [TaskModel] {
-        guard selectedFilter == .completed else { return [] }
-        return taskService.tasks.filter { $0.isCompleted }
+    var filteredTasks: [TaskModel] {
+        switch selectedFilter {
+        case .all:
+            return taskService.tasks.filter { !$0.isCompleted }
+        case .today:
+            return taskService.tasks.filter { task in
+                !task.isCompleted && Calendar.current.isDateInToday(task.createdAt)
+            }
+        case .completed:
+            return taskService.tasks.filter { $0.isCompleted }
+        case .highPriority:
+            return taskService.tasks.filter { task in
+                !task.isCompleted && task.priority == .high
+            }
+        case .unfinished:
+            return taskService.tasks.filter { isOverdue($0) }
+        }
     }
 
     // MARK: - Actions
@@ -84,12 +91,8 @@ class TaskViewModel: ObservableObject {
             return task.isCompleted
         case .highPriority:
             return task.priority == .high
-        }
-    }
-
-    private var filteredIncompleteTasks: [TaskModel] {
-        taskService.tasks.filter { task in
-            matchesSelectedFilter(task) && !task.isCompleted
+        case .unfinished:
+            return isOverdue(task)
         }
     }
 }

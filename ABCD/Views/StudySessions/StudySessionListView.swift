@@ -53,9 +53,7 @@ struct StudySessionListView: View {
                 CreateSessionView(viewModel: viewModel)
             }
             .onAppear {
-                if authService.currentUser?.uid != nil {
-                    viewModel.startListening()
-                }
+                viewModel.startListening()
             }
             .onChange(of: authService.currentUser?.uid) { _, userId in
                 if userId != nil {
