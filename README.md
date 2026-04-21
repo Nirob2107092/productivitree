@@ -139,7 +139,7 @@ High-level flow:
 
 ## High-Level System Architecture Diagram
 
-![Architecture Diagram](docs\architecture_diagram.png)
+![Architecture Diagram](ABCD\docs\architecture_diagram.png)
 
 ## UML Class Diagram
 
