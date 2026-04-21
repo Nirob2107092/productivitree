@@ -13,6 +13,7 @@ struct TaskModel: Codable, Identifiable {
     var priority: Priority
     var isCompleted: Bool
     var createdAt: Date
+    var deadline: Date?
     var completedAt: Date?
 }
 

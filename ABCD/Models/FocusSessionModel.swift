@@ -9,6 +9,7 @@ struct FocusSessionModel: Codable, Identifiable {
     var id: String
     var userId: String
     var durationMinutes: Int
+    var breakMinutes: Int
     var mode: FocusMode
     var completedAt: Date
 }
@@ -31,14 +32,6 @@ enum FocusMode: String, Codable, CaseIterable {
         case .deepWork: return "brain.head.profile"
         case .learning: return "book.fill"
         case .creating: return "paintbrush.fill"
-        }
-    }
-
-    var defaultMinutes: Int {
-        switch self {
-        case .deepWork: return 50
-        case .learning: return 25
-        case .creating: return 15
         }
     }
 }

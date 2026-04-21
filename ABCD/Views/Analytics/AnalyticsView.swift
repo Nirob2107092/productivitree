@@ -205,11 +205,11 @@ struct AnalyticsView: View {
     NavigationStack {
         AnalyticsView(
             focusSessions: [
-                FocusSessionModel(id: "f1", userId: "u1", durationMinutes: 45, mode: .deepWork, completedAt: Date()),
-                FocusSessionModel(id: "f2", userId: "u1", durationMinutes: 25, mode: .learning, completedAt: Date().addingTimeInterval(-86400))
+                FocusSessionModel(id: "f1", userId: "u1", durationMinutes: 45, breakMinutes: 10, mode: .deepWork, completedAt: Date()),
+                FocusSessionModel(id: "f2", userId: "u1", durationMinutes: 25, breakMinutes: 5, mode: .learning, completedAt: Date().addingTimeInterval(-86400))
             ],
             completedTasks: [
-                TaskModel(id: "t1", userId: "u1", title: "Task A", description: "", priority: .high, isCompleted: true, createdAt: Date(), completedAt: Date())
+                TaskModel(id: "t1", userId: "u1", title: "Task A", description: "", priority: .high, isCompleted: true, createdAt: Date(), deadline: Date().addingTimeInterval(86400), completedAt: Date())
             ],
             habits: [
                 HabitModel(

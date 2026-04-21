@@ -107,6 +107,12 @@ class TaskService: ObservableObject {
 
     func completeTask(task: TaskModel) {
         guard !task.isCompleted else { return }
+        if let deadline = task.deadline, Date() > deadline {
+            DispatchQueue.main.async { [weak self] in
+                self?.errorMessage = "This task is past its deadline and can no longer be completed."
+            }
+            return
+        }
 
         var updatedTask = task
         updatedTask.isCompleted = true
@@ -141,6 +147,10 @@ class TaskService: ObservableObject {
             "createdAt": Timestamp(date: task.createdAt)
         ]
 
+        if let deadline = task.deadline {
+            data["deadline"] = Timestamp(date: deadline)
+        }
+
         if let completedAt = task.completedAt {
             data["completedAt"] = Timestamp(date: completedAt)
         } else {
@@ -165,6 +175,7 @@ class TaskService: ObservableObject {
         }
 
         let completedAt = (data["completedAt"] as? Timestamp)?.dateValue()
+        let deadline = (data["deadline"] as? Timestamp)?.dateValue()
 
         return TaskModel(
             id: doc.documentID,
@@ -174,6 +185,7 @@ class TaskService: ObservableObject {
             priority: priority,
             isCompleted: isCompleted,
             createdAt: createdAtTimestamp.dateValue(),
+            deadline: deadline,
             completedAt: completedAt
         )
     }

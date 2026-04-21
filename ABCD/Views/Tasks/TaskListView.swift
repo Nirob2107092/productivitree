@@ -30,7 +30,7 @@ struct TaskListView: View {
                 .padding()
 
                 // Task list or empty state
-                if viewModel.filteredTasks.isEmpty {
+                if taskSectionsAreEmpty {
                     EmptyStateView(
                         icon: emptyStateIcon,
                         title: emptyStateTitle,
@@ -38,25 +38,59 @@ struct TaskListView: View {
                     )
                 } else {
                     List {
-                        ForEach(viewModel.filteredTasks) { task in
-                            TaskRowView(task: task)
-                                .swipeActions(edge: .leading) {
-                                    if !task.isCompleted {
-                                        Button {
-                                            viewModel.completeTask(task)
-                                        } label: {
-                                            Label("Complete", systemImage: "checkmark.circle.fill")
-                                        }
-                                        .tint(.green)
+                        if viewModel.selectedFilter == .completed {
+                            if !viewModel.completedTasks.isEmpty {
+                                Section("Completed") {
+                                    ForEach(viewModel.completedTasks) { task in
+                                        TaskRowView(task: task)
+                                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                                Button(role: .destructive) {
+                                                    viewModel.deleteTask(task)
+                                                } label: {
+                                                    Label("Delete", systemImage: "trash.fill")
+                                                }
+                                            }
                                     }
                                 }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        viewModel.deleteTask(task)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash.fill")
+                            }
+                        } else {
+                            if !viewModel.activeTasks.isEmpty {
+                                Section("Active") {
+                                    ForEach(viewModel.activeTasks) { task in
+                                        TaskRowView(task: task)
+                                            .swipeActions(edge: .leading) {
+                                                Button {
+                                                    viewModel.completeTask(task)
+                                                } label: {
+                                                    Label("Complete", systemImage: "checkmark.circle.fill")
+                                                }
+                                                .tint(.green)
+                                            }
+                                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                                Button(role: .destructive) {
+                                                    viewModel.deleteTask(task)
+                                                } label: {
+                                                    Label("Delete", systemImage: "trash.fill")
+                                                }
+                                            }
                                     }
                                 }
+                            }
+
+                            if !viewModel.unfinishedTasks.isEmpty {
+                                Section("Unfinished") {
+                                    ForEach(viewModel.unfinishedTasks) { task in
+                                        TaskRowView(task: task)
+                                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                                Button(role: .destructive) {
+                                                    viewModel.deleteTask(task)
+                                                } label: {
+                                                    Label("Delete", systemImage: "trash.fill")
+                                                }
+                                            }
+                                    }
+                                }
+                            }
                         }
                     }
                     .listStyle(.plain)
@@ -76,6 +110,11 @@ struct TaskListView: View {
             }
             .sheet(isPresented: $viewModel.showAddTask) {
                 AddTaskView(viewModel: viewModel)
+            }
+            .alert("Tasks", isPresented: taskErrorBinding) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(taskService.errorMessage ?? "")
             }
             .onAppear {
                 if let userId = authService.currentUser?.uid {
@@ -113,6 +152,24 @@ struct TaskListView: View {
         case .highPriority: return "No urgent tasks right now."
         }
     }
+
+    private var taskSectionsAreEmpty: Bool {
+        if viewModel.selectedFilter == .completed {
+            return viewModel.completedTasks.isEmpty
+        }
+        return viewModel.activeTasks.isEmpty && viewModel.unfinishedTasks.isEmpty
+    }
+
+    private var taskErrorBinding: Binding<Bool> {
+        Binding(
+            get: { taskService.errorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    taskService.errorMessage = nil
+                }
+            }
+        )
+    }
 }
 
 // MARK: - Task Row
@@ -140,21 +197,44 @@ struct TaskRowView: View {
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 }
+
+                if let deadline = task.deadline {
+                    Text(deadlineText(deadline))
+                        .font(.caption2)
+                        .foregroundColor(isOverdue ? .red : .secondary)
+                }
             }
 
             Spacer()
 
-            // Priority badge
-            Text(task.priority.displayName)
-                .font(.caption2)
-                .fontWeight(.semibold)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(priorityColor.opacity(0.15))
-                .foregroundColor(priorityColor)
-                .cornerRadius(6)
+            VStack(alignment: .trailing, spacing: 6) {
+                Text(task.priority.displayName)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(priorityColor.opacity(0.15))
+                    .foregroundColor(priorityColor)
+                    .cornerRadius(6)
+
+                if isOverdue {
+                    Text("Overdue")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.red.opacity(0.15))
+                        .foregroundColor(.red)
+                        .cornerRadius(6)
+                }
+            }
         }
         .padding(.vertical, 4)
+    }
+
+    private var isOverdue: Bool {
+        guard !task.isCompleted, let deadline = task.deadline else { return false }
+        return Date() > deadline
     }
 
     private var priorityColor: Color {
@@ -163,5 +243,12 @@ struct TaskRowView: View {
         case .medium: return .orange
         case .low: return .blue
         }
+    }
+
+    private func deadlineText(_ deadline: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return "Due \(formatter.string(from: deadline))"
     }
 }

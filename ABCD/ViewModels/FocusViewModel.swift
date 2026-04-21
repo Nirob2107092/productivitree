@@ -24,6 +24,8 @@ class FocusViewModel: ObservableObject {
     @Published var totalSeconds: Int
     @Published var isRunning: Bool = false
     @Published var selectedMode: FocusMode = .deepWork
+    @Published var focusMinutes: Int
+    @Published var breakMinutes: Int
     @Published var showCompletionAlert: Bool = false
 
     // Pomodoro state
@@ -38,15 +40,13 @@ class FocusViewModel: ObservableObject {
 
     private var timerCancellable: AnyCancellable?
 
-    // Pomodoro durations (standard technique: 25/5/15)
-    private static let pomodoroWorkMinutes = 25
-    private static let pomodoroShortBreakMinutes = 5
-    private static let pomodoroLongBreakMinutes = 15
     static let totalPomodoroCycles = 4
 
     init(focusService: FocusService) {
         self.focusService = focusService
-        let defaultSeconds = FocusMode.deepWork.defaultMinutes * 60
+        self.focusMinutes = 25
+        self.breakMinutes = 5
+        let defaultSeconds = focusMinutes * 60
         self.totalSeconds = defaultSeconds
         self.timeRemaining = defaultSeconds
     }
@@ -87,16 +87,18 @@ class FocusViewModel: ObservableObject {
     func selectMode(_ mode: FocusMode) {
         guard !isRunning else { return }
         selectedMode = mode
-        applyDurationForCurrentPhase()
     }
 
-    func setSessionDuration(minutes: Int) {
+    func configureSession(mode: FocusMode, focusMinutes: Int, breakMinutes: Int) {
         guard !isRunning else { return }
-        pomodoroEnabled = false
-        pomodoroPhase = .idle
-        pomodoroCycle = 1
-        totalSeconds = minutes * 60
-        timeRemaining = totalSeconds
+        selectedMode = mode
+        self.focusMinutes = focusMinutes
+        self.breakMinutes = breakMinutes
+        if pomodoroEnabled {
+            pomodoroPhase = .work
+            pomodoroCycle = 1
+        }
+        applyDurationForCurrentPhase()
     }
 
     // MARK: - Pomodoro
@@ -133,19 +135,7 @@ class FocusViewModel: ObservableObject {
     }
 
     private func applyDurationForCurrentPhase() {
-        let minutes: Int
-        if pomodoroEnabled {
-            switch pomodoroPhase {
-            case .shortBreak:
-                minutes = Self.pomodoroShortBreakMinutes
-            case .longBreak:
-                minutes = Self.pomodoroLongBreakMinutes
-            case .work, .idle:
-                minutes = Self.pomodoroWorkMinutes
-            }
-        } else {
-            minutes = selectedMode.defaultMinutes
-        }
+        let minutes = pomodoroEnabled && pomodoroPhase.isBreak ? breakMinutes : focusMinutes
         totalSeconds = minutes * 60
         timeRemaining = totalSeconds
     }
@@ -173,11 +163,12 @@ class FocusViewModel: ObservableObject {
         let wasWorkPhase = !pomodoroEnabled || pomodoroPhase == .work
 
         if wasWorkPhase, let userId = activeUserId {
-            let minutes = totalSeconds / 60
+            let minutes = focusMinutes
             let session = FocusSessionModel(
                 id: UUID().uuidString,
                 userId: userId,
                 durationMinutes: minutes,
+                breakMinutes: breakMinutes,
                 mode: selectedMode,
                 completedAt: Date()
             )

@@ -14,6 +14,7 @@ struct AddTaskView: View {
     @State private var title = ""
     @State private var description = ""
     @State private var priority: Priority = .medium
+    @State private var deadline = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
 
     var body: some View {
         NavigationStack {
@@ -42,6 +43,10 @@ struct AddTaskView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+
+                Section("Deadline") {
+                    DatePicker("Due by", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
+                }
             }
             .navigationTitle("New Task")
             .navigationBarTitleDisplayMode(.inline)
@@ -69,6 +74,7 @@ struct AddTaskView: View {
             title: title.trimmingCharacters(in: .whitespaces),
             description: description.trimmingCharacters(in: .whitespaces),
             priority: priority,
+            deadline: deadline,
             userId: userId
         )
         dismiss()

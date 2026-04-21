@@ -88,6 +88,7 @@ class FocusService: ObservableObject {
             "id": session.id,
             "userId": session.userId,
             "durationMinutes": session.durationMinutes,
+            "breakMinutes": session.breakMinutes,
             "mode": session.mode.rawValue,
             "completedAt": Timestamp(date: session.completedAt)
         ]
@@ -109,6 +110,7 @@ class FocusService: ObservableObject {
             id: doc.documentID,
             userId: userId,
             durationMinutes: durationMinutes,
+            breakMinutes: data["breakMinutes"] as? Int ?? 5,
             mode: mode,
             completedAt: completedAtTimestamp.dateValue()
         )

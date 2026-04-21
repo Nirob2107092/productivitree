@@ -78,7 +78,7 @@ struct FocusTimerView: View {
             .alert("Session Complete! 🎉", isPresented: $viewModel.showCompletionAlert) {
                 Button("Great!", role: .cancel) { }
             } message: {
-                Text("You completed a \(viewModel.totalSeconds / 60)-minute \(viewModel.selectedMode.displayName) session.")
+                Text("You completed a \(viewModel.focusMinutes)-minute \(viewModel.selectedMode.displayName) session.")
             }
         }
     }
@@ -112,6 +112,10 @@ struct FocusTimerView: View {
                 Text(viewModel.phaseLabel)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+
+                Text("Focus \(viewModel.focusMinutes) min - Break \(viewModel.breakMinutes) min")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
         .frame(width: 260, height: 260)
@@ -131,9 +135,6 @@ struct FocusTimerView: View {
                         Text(mode.displayName)
                             .font(.caption)
                             .fontWeight(.medium)
-                        Text("\(mode.defaultMinutes) min")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -211,7 +212,7 @@ struct FocusTimerView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Pomodoro Cycle")
                             .fontWeight(.medium)
-                        Text("4 × 25 min focus with breaks")
+                        Text("Custom focus and break durations")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -270,20 +271,18 @@ private struct FocusSessionSetupSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: FocusViewModel
 
-    private let presets: [Int] = [15, 25, 50]
-    @State private var selectedMinutes: Int = 25
+    @State private var selectedMode: FocusMode = .deepWork
+    @State private var focusMinutes: Int = 25
+    @State private var breakMinutes: Int = 5
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
+            Form {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Mode")
                         .font(.headline)
 
-                    Picker("Mode", selection: Binding(
-                        get: { viewModel.selectedMode },
-                        set: { viewModel.selectMode($0) }
-                    )) {
+                    Picker("Mode", selection: $selectedMode) {
                         ForEach(FocusMode.allCases, id: \.self) { mode in
                             Text(mode.displayName).tag(mode)
                         }
@@ -292,43 +291,43 @@ private struct FocusSessionSetupSheet: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Quick Duration")
+                    Text("Durations")
                         .font(.headline)
 
-                    HStack(spacing: 10) {
-                        ForEach(presets, id: \.self) { minutes in
-                            Button {
-                                selectedMinutes = minutes
-                                viewModel.setSessionDuration(minutes: minutes)
-                            } label: {
-                                Text("\(minutes) min")
-                                    .fontWeight(selectedMinutes == minutes ? .semibold : .regular)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(selectedMinutes == minutes ? Color.green.opacity(0.18) : Color.gray.opacity(0.10))
-                                    .foregroundColor(selectedMinutes == minutes ? .green : .primary)
-                                    .cornerRadius(12)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                    Stepper("Focus time: \(focusMinutes) min", value: $focusMinutes, in: 5...180, step: 5)
+                    Stepper("Break time: \(breakMinutes) min", value: $breakMinutes, in: 1...60, step: 1)
+
+                    Text("These values are applied to the timer and Pomodoro breaks.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
-                Button {
-                    dismiss()
-                } label: {
-                    Text("Done")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                Section {
+                    Button {
+                        applySettings()
+                    } label: {
+                        Text("Done")
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
                 }
             }
-            .padding()
             .navigationTitle("New Focus Session")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                selectedMode = viewModel.selectedMode
+                focusMinutes = viewModel.focusMinutes
+                breakMinutes = viewModel.breakMinutes
+            }
         }
+    }
+
+    private func applySettings() {
+        viewModel.configureSession(
+            mode: selectedMode,
+            focusMinutes: focusMinutes,
+            breakMinutes: breakMinutes
+        )
+        dismiss()
     }
 }
