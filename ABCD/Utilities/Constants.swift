@@ -1,3 +1,4 @@
+
 //
 //  Constants.swift
 //  ABCD
@@ -20,5 +21,12 @@ struct Constants {
         static let taskCompleted = 10
         static let habitCompleted = 20
         static let xpPerLevel = 100
+    }
+
+    // MARK: - Cloudinary
+    struct Cloudinary {
+        static let cloudName = "dgr1cgahg"
+        static let unsignedUploadPreset = "tasks_images"
+        static let uploadsFolder = "productivitree/tasks"
     }
 }

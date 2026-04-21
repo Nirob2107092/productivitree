@@ -46,8 +46,8 @@ class HabitViewModel: ObservableObject {
 
     // MARK: - Toggle Today
 
-    func toggleHabit(_ habit: HabitModel) {
-        habitService.toggleTodayCompletion(habit: habit)
+    func toggleHabit(_ habit: HabitModel, completionImageData: Data? = nil) {
+        habitService.toggleTodayCompletion(habit: habit, completionImageData: completionImageData)
     }
 
     // MARK: - Delete

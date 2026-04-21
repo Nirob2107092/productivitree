@@ -15,6 +15,7 @@ struct TaskModel: Codable, Identifiable {
     var createdAt: Date
     var deadline: Date?
     var completedAt: Date?
+    var completionImageURL: String? = nil
 }
 
 enum Priority: String, Codable, CaseIterable {

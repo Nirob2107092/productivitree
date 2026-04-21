@@ -5,11 +5,14 @@
 
 import SwiftUI
 import FirebaseAuth
+import PhotosUI
 
 struct HabitListView: View {
     @EnvironmentObject var authService: AuthService
     @StateObject private var habitService = HabitService()
     @StateObject private var viewModel: HabitViewModel
+    @State private var habitForPhotoCompletion: HabitModel?
+    @State private var habitImagePreviewItem: RemoteImagePreviewItem?
 
     init() {
         let service = HabitService()
@@ -29,7 +32,13 @@ struct HabitListView: View {
                 } else {
                     List {
                         ForEach(habitService.habits) { habit in
-                            HabitRowView(habit: habit, viewModel: viewModel)
+                            HabitRowView(habit: habit, viewModel: viewModel) {
+                                habitForPhotoCompletion = habit
+                            } onPreviewImage: {
+                                if let urlString = habit.completionImageURLs[currentUTCDateKey] {
+                                    habitImagePreviewItem = RemoteImagePreviewItem(title: habit.title, urlString: urlString)
+                                }
+                            }
                         }
                         .onDelete { indexSet in
                             indexSet.forEach { i in
@@ -59,6 +68,20 @@ struct HabitListView: View {
                     viewModel.startListening(userId: userId)
                 }
             }
+            .sheet(item: $habitForPhotoCompletion) { habit in
+                CompletionPhotoSheet(
+                    title: "Complete Habit",
+                    subtitle: habit.title,
+                    confirmTitle: "Complete Habit"
+                ) { imageData in
+                    if !viewModel.isCompletedToday(habit) {
+                        viewModel.toggleHabit(habit, completionImageData: imageData)
+                    }
+                }
+            }
+            .sheet(item: $habitImagePreviewItem) { item in
+                RemoteImagePreviewSheet(item: item)
+            }
         }
     }
 }
@@ -68,6 +91,8 @@ struct HabitListView: View {
 struct HabitRowView: View {
     let habit: HabitModel
     @ObservedObject var viewModel: HabitViewModel
+    let onCompleteWithPhoto: () -> Void
+    let onPreviewImage: () -> Void
     @State private var isExpanded = false
 
     private var completedToday: Bool {
@@ -86,6 +111,17 @@ struct HabitRowView: View {
                         .foregroundColor(completedToday ? .orange : .gray)
                 }
                 .buttonStyle(.plain)
+
+                if !completedToday {
+                    Button {
+                        onCompleteWithPhoto()
+                    } label: {
+                        Image(systemName: "photo.badge.checkmark")
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 // Habit title
                 Text(habit.title)
@@ -135,7 +171,28 @@ struct HabitRowView: View {
                     .foregroundColor(.secondary)
                     .padding(.leading, 36)
             }
+
+            if completedToday,
+               let todayPhotoURL = habit.completionImageURLs[currentUTCDateKey],
+               !todayPhotoURL.isEmpty {
+                Button {
+                    onPreviewImage()
+                } label: {
+                    Label("Photo attached today", systemImage: "photo")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 36)
+            }
         }
         .padding(.vertical, 6)
+    }
+
+    private var currentUTCDateKey: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: Date())
     }
 }

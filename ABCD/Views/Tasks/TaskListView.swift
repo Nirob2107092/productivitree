@@ -5,11 +5,15 @@
 
 import SwiftUI
 import FirebaseAuth
+import PhotosUI
+import UIKit
 
 struct TaskListView: View {
     @EnvironmentObject var authService: AuthService
     @StateObject private var taskService = TaskService()
     @StateObject private var viewModel: TaskViewModel
+    @State private var taskForPhotoCompletion: TaskModel?
+    @State private var taskImagePreviewItem: RemoteImagePreviewItem?
 
     init() {
         let service = TaskService()
@@ -39,7 +43,14 @@ struct TaskListView: View {
                 } else {
                     List {
                         ForEach(viewModel.filteredTasks) { task in
-                            TaskRowView(task: task)
+                            TaskRowView(task: task) {
+                                if let completionImageURL = task.completionImageURL {
+                                    taskImagePreviewItem = RemoteImagePreviewItem(
+                                        title: task.title,
+                                        urlString: completionImageURL
+                                    )
+                                }
+                            }
                                 .swipeActions(edge: .leading) {
                                     if !task.isCompleted && !viewModel.isOverdue(task) {
                                         Button {
@@ -48,6 +59,13 @@ struct TaskListView: View {
                                             Label("Complete", systemImage: "checkmark.circle.fill")
                                         }
                                         .tint(.green)
+
+                                        Button {
+                                            taskForPhotoCompletion = task
+                                        } label: {
+                                            Label("Photo", systemImage: "photo.badge.checkmark")
+                                        }
+                                        .tint(.blue)
                                     }
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -86,6 +104,18 @@ struct TaskListView: View {
                 if let userId = authService.currentUser?.uid {
                     viewModel.startListening(userId: userId)
                 }
+            }
+            .sheet(item: $taskForPhotoCompletion) { task in
+                CompletionPhotoSheet(
+                    title: "Complete Task",
+                    subtitle: task.title,
+                    confirmTitle: "Complete Task"
+                ) { imageData in
+                    viewModel.completeTask(task, completionImageData: imageData)
+                }
+            }
+            .sheet(item: $taskImagePreviewItem) { item in
+                RemoteImagePreviewSheet(item: item)
             }
         }
     }
@@ -138,6 +168,7 @@ struct TaskListView: View {
 
 struct TaskRowView: View {
     let task: TaskModel
+    let onPreviewImage: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -164,6 +195,17 @@ struct TaskRowView: View {
                     Text(deadlineText(deadline))
                         .font(.caption2)
                         .foregroundColor(isOverdue ? .red : .secondary)
+                }
+
+                if task.isCompleted, task.completionImageURL != nil {
+                    Button {
+                        onPreviewImage()
+                    } label: {
+                        Label("Photo attached", systemImage: "photo")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
@@ -212,5 +254,113 @@ struct TaskRowView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return "Due \(formatter.string(from: deadline))"
+    }
+}
+
+struct CompletionPhotoSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let title: String
+    let subtitle: String
+    let confirmTitle: String
+    let onConfirm: (Data?) -> Void
+
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var imageData: Data?
+    @State private var previewImage: Image?
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                VStack(spacing: 6) {
+                    Text(title)
+                        .font(.headline)
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.gray.opacity(0.12))
+                        .frame(height: 180)
+
+                    if let previewImage {
+                        previewImage
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 180)
+                            .clipped()
+                            .cornerRadius(12)
+                    } else {
+                        VStack(spacing: 8) {
+                            Image(systemName: "photo")
+                                .font(.title2)
+                                .foregroundColor(.secondary)
+                            Text("Optional proof image")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
+                PhotosPicker(selection: $selectedItem, matching: .images) {
+                    Label("Choose Photo", systemImage: "photo.on.rectangle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    onConfirm(imageData)
+                    dismiss()
+                } label: {
+                    Text(confirmTitle)
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+
+                Button("Complete Without Photo") {
+                    onConfirm(nil)
+                    dismiss()
+                }
+                .foregroundColor(.secondary)
+
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Add Image")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+            .onChange(of: selectedItem) { _, newItem in
+                guard let newItem else {
+                    imageData = nil
+                    previewImage = nil
+                    return
+                }
+
+                Task {
+                    if let data = try? await newItem.loadTransferable(type: Data.self) {
+                        await MainActor.run {
+                            imageData = data
+                            if let uiImage = UIImage(data: data) {
+                                previewImage = Image(uiImage: uiImage)
+                            } else {
+                                previewImage = nil
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

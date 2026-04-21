@@ -68,8 +68,8 @@ class TaskViewModel: ObservableObject {
         taskService.createTask(task: task)
     }
 
-    func completeTask(_ task: TaskModel) {
-        taskService.completeTask(task: task)
+    func completeTask(_ task: TaskModel, completionImageData: Data? = nil) {
+        taskService.completeTask(task: task, completionImageData: completionImageData)
     }
 
     func deleteTask(_ task: TaskModel) {

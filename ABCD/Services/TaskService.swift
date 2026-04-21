@@ -105,7 +105,7 @@ class TaskService: ObservableObject {
 
     // MARK: - Complete Task
 
-    func completeTask(task: TaskModel) {
+    func completeTask(task: TaskModel, completionImageData: Data? = nil) {
         guard !task.isCompleted else { return }
         if let deadline = task.deadline, Date() > deadline {
             DispatchQueue.main.async { [weak self] in
@@ -114,26 +114,13 @@ class TaskService: ObservableObject {
             return
         }
 
-        var updatedTask = task
-        updatedTask.isCompleted = true
-        updatedTask.completedAt = Date()
-
-        db.collection(Constants.Collections.tasks)
-            .document(task.id)
-            .setData(taskData(from: updatedTask), merge: true) { [weak self] error in
-                if let error = error {
-                    DispatchQueue.main.async {
-                        self?.errorMessage = "Failed to complete task: \(error.localizedDescription)"
-                    }
-                    return
-                }
-
-                // Single gamification write path for XP + stats + tree update.
-                GamificationService.shared.applyTaskCompletion(
-                    userId: task.userId,
-                    xpAmount: Constants.XP.taskCompleted
-                )
+        if let completionImageData {
+            uploadCompletionImage(data: completionImageData, userId: task.userId, taskId: task.id) { [weak self] imageURL in
+                self?.finalizeTaskCompletion(task: task, completionImageURL: imageURL)
             }
+        } else {
+            finalizeTaskCompletion(task: task, completionImageURL: nil)
+        }
     }
 
     private func taskData(from task: TaskModel) -> [String: Any] {
@@ -157,7 +144,51 @@ class TaskService: ObservableObject {
             data["completedAt"] = NSNull()
         }
 
+        if let completionImageURL = task.completionImageURL {
+            data["completionImageURL"] = completionImageURL
+        } else {
+            data["completionImageURL"] = NSNull()
+        }
+
         return data
+    }
+
+    private func finalizeTaskCompletion(task: TaskModel, completionImageURL: String?) {
+        var updatedTask = task
+        updatedTask.isCompleted = true
+        updatedTask.completedAt = Date()
+        updatedTask.completionImageURL = completionImageURL
+
+        db.collection(Constants.Collections.tasks)
+            .document(task.id)
+            .setData(taskData(from: updatedTask), merge: true) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to complete task: \(error.localizedDescription)"
+                    }
+                    return
+                }
+
+                // Single gamification write path for XP + stats + tree update.
+                GamificationService.shared.applyTaskCompletion(
+                    userId: task.userId,
+                    xpAmount: Constants.XP.taskCompleted
+                )
+            }
+    }
+
+    private func uploadCompletionImage(data: Data, userId: String, taskId: String, completion: @escaping (String?) -> Void) {
+        CloudinaryService.shared.uploadImage(data: data, fileNamePrefix: "task_\(userId)_\(taskId)") { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let url):
+                    completion(url)
+                case .failure(let error):
+                    self?.errorMessage = "Task completed, but image upload failed: \(error.localizedDescription)"
+                    completion(nil)
+                }
+            }
+        }
     }
 
     private func decodeTask(from doc: QueryDocumentSnapshot) -> TaskModel? {
@@ -176,6 +207,7 @@ class TaskService: ObservableObject {
 
         let completedAt = (data["completedAt"] as? Timestamp)?.dateValue()
         let deadline = (data["deadline"] as? Timestamp)?.dateValue()
+        let completionImageURL = data["completionImageURL"] as? String
 
         return TaskModel(
             id: doc.documentID,
@@ -186,7 +218,8 @@ class TaskService: ObservableObject {
             isCompleted: isCompleted,
             createdAt: createdAtTimestamp.dateValue(),
             deadline: deadline,
-            completedAt: completedAt
+            completedAt: completedAt,
+            completionImageURL: completionImageURL
         )
     }
 }

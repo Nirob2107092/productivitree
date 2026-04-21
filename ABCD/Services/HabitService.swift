@@ -63,36 +63,50 @@ class HabitService: ObservableObject {
 
     // MARK: - Toggle Today's Completion
 
-    func toggleTodayCompletion(habit: HabitModel) {
+    func toggleTodayCompletion(habit: HabitModel, completionImageData: Data? = nil) {
         let today = Self.dateFormatter.string(from: Date())
         var updatedHabit = habit
 
         if updatedHabit.completedDates.contains(today) {
             // Already completed today — un-complete it, no XP deduction
             updatedHabit.completedDates.removeAll { $0 == today }
-        } else {
+            updatedHabit.completionImageURLs.removeValue(forKey: today)
+            persistHabitUpdate(updatedHabit)
+            return
+        }
+
+        func completeHabit(with imageURL: String?) {
             // Not yet completed today — mark complete and award XP
             updatedHabit.completedDates.append(today)
+            if let imageURL {
+                updatedHabit.completionImageURLs[today] = imageURL
+            }
+            // Not yet completed today — mark complete and award XP
             if !updatedHabit.xpAwardedDates.contains(today) {
                 GamificationService.shared.addXP(userId: habit.userId, amount: Constants.XP.habitCompleted)
                 updatedHabit.xpAwardedDates.append(today)
             }
+
+            // Recalculate streaks after any change
+            let newCurrentStreak = calculateCurrentStreak(completedDates: updatedHabit.completedDates)
+            updatedHabit.currentStreak = newCurrentStreak
+            updatedHabit.bestStreak = max(updatedHabit.bestStreak, newCurrentStreak)
+
+            persistHabitUpdate(updatedHabit)
         }
 
-        // Recalculate streaks after any change
-        let newCurrentStreak = calculateCurrentStreak(completedDates: updatedHabit.completedDates)
-        updatedHabit.currentStreak = newCurrentStreak
-        updatedHabit.bestStreak = max(updatedHabit.bestStreak, newCurrentStreak)
-
-        db.collection(Constants.Collections.habits)
-            .document(habit.id)
-            .setData(habitData(from: updatedHabit), merge: true) { [weak self] error in
-                if let error = error {
+        if let completionImageData {
+            uploadCompletionImage(data: completionImageData, userId: habit.userId, habitId: habit.id, dateKey: today) { [weak self] imageURL in
+                if completionImageData != nil && imageURL == nil {
                     DispatchQueue.main.async {
-                        self?.errorMessage = "Failed to update habit: \(error.localizedDescription)"
+                        self?.errorMessage = self?.errorMessage ?? "Habit completed without image due to upload issue."
                     }
                 }
+                completeHabit(with: imageURL)
             }
+        } else {
+            completeHabit(with: nil)
+        }
     }
 
     // MARK: - Delete Habit
@@ -141,10 +155,40 @@ class HabitService: ObservableObject {
             "title": habit.title,
             "completedDates": habit.completedDates,
             "xpAwardedDates": habit.xpAwardedDates,
+            "completionImageURLs": habit.completionImageURLs,
             "currentStreak": habit.currentStreak,
             "bestStreak": habit.bestStreak,
             "createdAt": Timestamp(date: habit.createdAt)
         ]
+    }
+
+    private func persistHabitUpdate(_ habit: HabitModel) {
+        db.collection(Constants.Collections.habits)
+            .document(habit.id)
+            .setData(habitData(from: habit), merge: true) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Failed to update habit: \(error.localizedDescription)"
+                    }
+                }
+            }
+    }
+
+    private func uploadCompletionImage(data: Data, userId: String, habitId: String, dateKey: String, completion: @escaping (String?) -> Void) {
+        CloudinaryService.shared.uploadImage(
+            data: data,
+            fileNamePrefix: "habit_\(userId)_\(habitId)_\(dateKey)"
+        ) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let url):
+                    completion(url)
+                case .failure(let error):
+                    self?.errorMessage = "Habit completed, but image upload failed: \(error.localizedDescription)"
+                    completion(nil)
+                }
+            }
+        }
     }
 
     private func decodeHabit(from doc: QueryDocumentSnapshot) -> HabitModel? {
@@ -161,6 +205,7 @@ class HabitService: ObservableObject {
         }
 
         let xpAwardedDates = data["xpAwardedDates"] as? [String] ?? []
+        let completionImageURLs = data["completionImageURLs"] as? [String: String] ?? [:]
 
         return HabitModel(
             id: doc.documentID,
@@ -168,6 +213,7 @@ class HabitService: ObservableObject {
             title: title,
             completedDates: completedDates,
             xpAwardedDates: xpAwardedDates,
+            completionImageURLs: completionImageURLs,
             currentStreak: currentStreak,
             bestStreak: bestStreak,
             createdAt: createdAtTimestamp.dateValue()
