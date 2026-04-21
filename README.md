@@ -329,16 +329,7 @@ Recommended QA pass:
 - Study session create/join/leave/start/end/delete
 - Profile stats and analytics consistency
 
-## Roadmap
 
-Potential next steps:
-
-- Full end-to-end QA hardening
-- Better loading/error UX polish
-- Accessibility review
-- Localization support
-- Push/local notifications
-- Optional offline caching strategy
 
 ## Contributing
 
