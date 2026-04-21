@@ -156,43 +156,123 @@ High-level flow:
 
 ## Screenshots
 
-### Authentication
+### 🔐 Authentication
+<p align="center">
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/signin.jpeg" width="220"/><br/>
+    <sub>Sign In Screen</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/log1.jpeg" width="220"/><br/>
+    <sub>Login Variant</sub>
+  </div>
+</p>
+---
 
-![Sign In](ABCD/docs/signin.jpeg)
-![Login Variant](ABCD/docs/log1.jpeg)
+### 📋 Tasks
+<p align="center">
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/tasks_view.jpeg" width="220"/><br/>
+    <sub>Tasks Overview</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/tasks_view2.jpeg" width="220"/><br/>
+    <sub>Filtered Tasks</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/task_view4.jpeg" width="220"/><br/>
+    <sub>Additional View</sub>
+  </div>
+</p>
 
-### Tasks
+<p align="center">
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/create_task.jpeg" width="220"/><br/>
+    <sub>Create Task</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/preview_task_img.jpeg" width="220"/><br/>
+    <sub>Image Preview</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/complete_task_img.jpeg" width="220"/><br/>
+    <sub>Completion Proof</sub>
+  </div>
+</p>
 
-![Tasks Overview](ABCD/docs/tasks_view.jpeg)
-![Tasks Filtered View](ABCD/docs/tasks_view2.jpeg)
-![Tasks Additional View](ABCD/docs/task_view4.jpeg)
-![Create Task](ABCD/docs/create_task.jpeg)
-![Task Image Preview](ABCD/docs/preview_task_img.jpeg)
-![Task Completion Image](ABCD/docs/complete_task_img.jpeg)
+---
 
-### Habits
+### 🔁 Habits
+<p align="center">
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/habit_view.jpeg" width="220"/><br/>
+    <sub>Habits List</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/habit_img.jpeg" width="220"/><br/>
+    <sub>Completion Image</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/habit_analytivs.jpeg" width="220"/><br/>
+    <sub>Analytics</sub>
+  </div>
+</p>
 
-![Habits List](ABCD/docs/habit_view.jpeg)
-![Habit Completion Image](ABCD/docs/habit_img.jpeg)
-![Habit Analytics](ABCD/docs/habit_analytivs.jpeg)
+---
 
-### Focus
+### ⏱ Focus
+<p align="center">
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/focus_timer.jpeg" width="220"/><br/>
+    <sub>Focus Timer</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/custome_focus.jpeg" width="220"/><br/>
+    <sub>Custom Setup</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/ambient_sound.jpeg" width="220"/><br/>
+    <sub>Ambient Sounds</sub>
+  </div>
+</p>
 
-![Focus Timer](ABCD/docs/focus_timer.jpeg)
-![Custom Focus Setup](ABCD/docs/custome_focus.jpeg)
-![Ambient Sound](ABCD/docs/ambient_sound.jpeg)
+---
 
-### Study Sessions
+### 🤝 Study Sessions
+<p align="center">
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/study_sessions.jpeg" width="220"/><br/>
+    <sub>Sessions List</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/session_details.jpeg" width="220"/><br/>
+    <sub>Session Details</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/session_history.jpeg" width="220"/><br/>
+    <sub>Session History</sub>
+  </div>
+</p>
 
-![Study Sessions List](ABCD/docs/study_sessions.jpeg)
-![Session Details](ABCD/docs/session_details.jpeg)
-![Session History](ABCD/docs/session_history.jpeg)
+---
 
-### Profile and Progress
+### 📊 Profile & Progress
+<p align="center">
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/profie.jpeg" width="220"/><br/>
+    <sub>User Profile</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/xp.jpeg" width="220"/><br/>
+    <sub>XP Progress</sub>
+  </div>
+  <div style="display:inline-block; margin:10px; text-align:center;">
+    <img src="ABCD/docs/analytics.jpeg" width="220"/><br/>
+    <sub>Weekly Analytics</sub>
+  </div>
+</p>
 
-![Profile](ABCD/docs/profie.jpeg)
-![XP Progress](ABCD/docs/xp.jpeg)
-![Analytics](ABCD/docs/analytics.jpeg)
+---
 
 ## Project Structure
 
