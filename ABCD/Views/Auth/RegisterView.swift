@@ -39,10 +39,13 @@ struct RegisterView: View {
                 TextField("Display Name", text: $displayName)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.name)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
 
                 TextField("Email", text: $email)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.emailAddress)
+                    .textInputAutocapitalization(.never)
                     .autocorrectionDisabled(true)
                     .keyboardType(.emailAddress)
 
