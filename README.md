@@ -24,6 +24,7 @@ The app uses Firebase Authentication and Cloud Firestore for backend services.
 - [UML Class Diagram](#uml-class-diagram)
 - [DFD Level 0 (Context Diagram)](#dfd-level-0-context-diagram)
 - [DFD Level 1](#dfd-level-1)
+- [Screenshots](#screenshots)
 - [Project Structure](#project-structure)
 - [Data Model and Firestore Collections](#data-model-and-firestore-collections)
 - [Getting Started](#getting-started)
@@ -152,6 +153,46 @@ High-level flow:
 ## DFD Level 1
 
 ![DFD Level 1](ABCD/docs/dfd1.png)
+
+## Screenshots
+
+### Authentication
+
+![Sign In](ABCD/docs/signin.jpeg)
+![Login Variant](ABCD/docs/log1.jpeg)
+
+### Tasks
+
+![Tasks Overview](ABCD/docs/tasks_view.jpeg)
+![Tasks Filtered View](ABCD/docs/tasks_view2.jpeg)
+![Tasks Additional View](ABCD/docs/task_view4.jpeg)
+![Create Task](ABCD/docs/create_task.jpeg)
+![Task Image Preview](ABCD/docs/preview_task_img.jpeg)
+![Task Completion Image](ABCD/docs/complete_task_img.jpeg)
+
+### Habits
+
+![Habits List](ABCD/docs/habit_view.jpeg)
+![Habit Completion Image](ABCD/docs/habit_img.jpeg)
+![Habit Analytics](ABCD/docs/habit_analytivs.jpeg)
+
+### Focus
+
+![Focus Timer](ABCD/docs/focus_timer.jpeg)
+![Custom Focus Setup](ABCD/docs/custome_focus.jpeg)
+![Ambient Sound](ABCD/docs/ambient_sound.jpeg)
+
+### Study Sessions
+
+![Study Sessions List](ABCD/docs/study_sessions.jpeg)
+![Session Details](ABCD/docs/session_details.jpeg)
+![Session History](ABCD/docs/session_history.jpeg)
+
+### Profile and Progress
+
+![Profile](ABCD/docs/profie.jpeg)
+![XP Progress](ABCD/docs/xp.jpeg)
+![Analytics](ABCD/docs/analytics.jpeg)
 
 ## Project Structure
 
