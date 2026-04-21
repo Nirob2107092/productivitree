@@ -73,13 +73,14 @@ struct HabitHeatmapView: View {
 
     private var weeksGrid: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.fixed(12), spacing: 4), count: 12), spacing: 4) {
-            ForEach(0..<7, id: \.self) { row in
-                ForEach(0..<12, id: \.self) { col in
-                    let date = weekColumns[col][row]
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(color(for: date))
-                        .frame(width: 12, height: 12)
-                }
+            ForEach(0..<84, id: \.self) { index in
+                let row = index / 12
+                let col = index % 12
+                let date = weekColumns[col][row]
+
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(color(for: date))
+                    .frame(width: 12, height: 12)
             }
         }
     }
@@ -95,11 +96,11 @@ struct HabitHeatmapView: View {
                 .frame(width: 10, height: 10)
 
             RoundedRectangle(cornerRadius: 3)
-                .fill(Color("AccentGreen").opacity(0.45))
+                .fill(Theme.Colors.accent.opacity(0.45))
                 .frame(width: 10, height: 10)
 
             RoundedRectangle(cornerRadius: 3)
-                .fill(Color("AccentGreen").opacity(0.85))
+                .fill(Theme.Colors.accent.opacity(0.85))
                 .frame(width: 10, height: 10)
 
             Text("More")
@@ -116,7 +117,7 @@ struct HabitHeatmapView: View {
 
         let key = Self.dateFormatter.string(from: dateOnly)
         if completedSet.contains(key) {
-            return Color("AccentGreen").opacity(0.85)
+            return Theme.Colors.accent.opacity(0.85)
         }
         return Color(.systemGray5)
     }

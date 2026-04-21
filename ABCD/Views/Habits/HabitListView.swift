@@ -84,6 +84,13 @@ struct HabitListView: View {
             }
         }
     }
+
+    private var currentUTCDateKey: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: Date())
+    }
 }
 
 // MARK: - Habit Row
